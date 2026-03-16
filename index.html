@@ -530,17 +530,37 @@ const CC={bl:'#3b82f6',am:'#f59e0b',gr:'#10b981',rd:'#ef4444',pu:'#8b5cf6',pi:'#
 const CA=Object.values(CC);
 let charts={};
 
-async function loadData() {
-  try {
-    const res = await fetch(`${DATA_URL}?ts=${Date.now()}`);
-    if (!res.ok) throw new Error('No se pudo cargar la fuente');
+function handleDashboardData(data) {
+  console.log('Datos recibidos:', data);
 
-    const data = await res.json();
+  if (data && data.error) {
+    alert('Error Apps Script: ' + data.message);
+    return;
+  }
 
-    if (!Array.isArray(data)) {
-      throw new Error('La respuesta no viene como lista');
-    }
+  if (!Array.isArray(data)) {
+    alert('La respuesta no viene como array válido');
+    return;
+  }
 
+  RAW = data;
+  populateFilters();
+  render();
+}
+
+function loadData() {
+  const oldScript = document.getElementById('dashboardDataScript');
+  if (oldScript) oldScript.remove();
+
+  const script = document.createElement('script');
+  script.id = 'dashboardDataScript';
+  script.src = `${DATA_URL}?callback=handleDashboardData&ts=${Date.now()}`;
+  script.onerror = function () {
+    alert('No se pudo cargar el dashboard desde Google Sheets');
+  };
+
+  document.body.appendChild(script);
+}
     RAW = data;
     populateFilters();
     render();
