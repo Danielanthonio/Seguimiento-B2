@@ -1,468 +1,817 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Gestión de Leads</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: linear-gradient(145deg, #0c1222 0%, #1a2744 50%, #0f172a 100%);
-      min-height: 100vh;
-      color: #e2e8f0;
-      padding: 20px;
-    }
-    
-    .container { max-width: 1400px; margin: 0 auto; }
-    
-    .alert {
-      border-radius: 12px;
-      padding: 14px 18px;
-      margin-bottom: 20px;
-      font-size: 13px;
-    }
-    .alert.success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; }
-    .alert.error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; }
-    .alert.info { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; }
-    
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    .header-left { display: flex; align-items: center; gap: 14px; }
-    .logo {
-      width: 44px; height: 44px;
-      background: linear-gradient(135deg, #06b6d4, #0891b2);
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px;
-    }
-    .header h1 { font-size: 24px; font-weight: 800; }
-    .header h1 span { color: #06b6d4; }
-    .header p { font-size: 12px; color: #64748b; }
-    
-    .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .select-box {
-      appearance: none;
-      background: rgba(15, 23, 42, 0.9) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 10px;
-      padding: 10px 36px 10px 14px;
-      color: #e2e8f0;
-      font-size: 13px;
-      cursor: pointer;
-      min-width: 150px;
-    }
-    .select-box:focus { outline: none; border-color: #06b6d4; }
-    
-    .btn-primary {
-      background: linear-gradient(135deg, #06b6d4, #0891b2);
-      border: none;
-      border-radius: 10px;
-      padding: 10px 18px;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    .btn-primary:hover { opacity: 0.9; }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    
-    .kpis {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .kpi-card {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-      border: 1px solid rgba(148, 163, 184, 0.1);
-      border-radius: 16px;
-      padding: 20px;
-      position: relative;
-    }
-    .kpi-card::after {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    }
-    .kpi-card.cyan::after { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
-    .kpi-card.green::after { background: linear-gradient(90deg, #22c55e, #4ade80); }
-    .kpi-card.red::after { background: linear-gradient(90deg, #ef4444, #f87171); }
-    .kpi-card.gold::after { background: linear-gradient(90deg, #ca8a04, #facc15); }
-    .kpi-card .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .kpi-card .value { font-size: 36px; font-weight: 800; }
-    .kpi-card.cyan .value { color: #06b6d4; }
-    .kpi-card.green .value { color: #22c55e; }
-    .kpi-card.red .value { color: #ef4444; }
-    .kpi-card.gold .value { color: #ca8a04; }
-    
-    .card {
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-      border: 1px solid rgba(148, 163, 184, 0.1);
-      border-radius: 16px;
-      padding: 20px;
-    }
-    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 20px; }
-    
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 20px;
-      margin-bottom: 24px;
-    }
-    .chart-container { position: relative; height: 280px; }
-    .chart-full { grid-column: 1 / -1; }
-    
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th {
-      text-align: left; padding: 12px 10px; color: #06b6d4;
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      border-bottom: 2px solid rgba(6, 182, 212, 0.3);
-    }
-    td { padding: 12px 10px; border-bottom: 1px solid rgba(148, 163, 184, 0.1); }
-    tr:hover { background: rgba(6, 182, 212, 0.05); }
-    
-    .badge {
-      padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block;
-    }
-    .badge.nuevo { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-    .badge.usado { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
-    .badge.contesta { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-    .badge.no-contesta { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-    .badge.sin-gestionar { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-    .badge.agendado { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-    .badge.no-interesado { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-    .badge.otros { background: rgba(202, 138, 4, 0.15); color: #ca8a04; }
-    .badge.cierre { background: rgba(161, 98, 7, 0.2); color: #a16207; }
-    .badge.desiste { background: rgba(153, 27, 27, 0.15); color: #991b1b; }
-    .badge.pendiente { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
-    
-    .obs-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #94a3b8; }
-    
-    .loading { text-align: center; padding: 60px; color: #64748b; }
-    .loading-spinner {
-      width: 40px; height: 40px; margin: 0 auto 16px;
-      border: 3px solid rgba(6, 182, 212, 0.2);
-      border-top-color: #06b6d4;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2 Autos — Dashboard Comercial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #07090f;
+  --surface: #0e1420;
+  --surface2: #141c2e;
+  --surface3: #1a2440;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.1);
+  --txt: #e8edf5;
+  --txt2: #8896b0;
+  --txt3: #50607a;
+  --blue: #3b82f6;
+  --blue-dim: rgba(59,130,246,0.12);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245,158,11,0.12);
+  --green: #10b981;
+  --green-dim: rgba(16,185,129,0.12);
+  --red: #ef4444;
+  --red-dim: rgba(239,68,68,0.12);
+  --red-bright: #ff2e2e;
+  --purple: #8b5cf6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:14px}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100;gap:16px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-badge{width:34px;height:34px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff}
+.logo-text{font-size:16px;font-weight:700;letter-spacing:-0.3px}
+.logo-text b{color:var(--blue)}
+.header-meta{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.hm-pill{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.hm-pill.blue{background:var(--blue-dim);border:1px solid rgba(59,130,246,0.2);color:var(--blue)}
+.hm-pill.gray{background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--txt2);font-family:'DM Mono',monospace;font-weight:400}
+
+/* MAIN */
+.main{padding:22px 28px;max-width:1600px;margin:0 auto}
+
+/* FILTERS */
+.fc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:22px}
+.fh{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--txt3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.fr{display:grid;grid-template-columns:150px 150px 1fr 1fr 1fr 1fr auto;gap:10px;align-items:end}
+.fg label{display:block;font-size:10px;color:var(--txt3);margin-bottom:4px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase}
+.fg select,.fg input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--txt);padding:8px 10px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.15s;cursor:pointer}
+.fg select:focus,.fg input:focus{border-color:var(--blue)}
+.fg select option{background:#1a2235}
+.btn-rst{padding:8px 14px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--txt2);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.btn-rst:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ═══════════════════════════════════════
+   HERO — TIEMPO SIN SEGUIMIENTO
+   ════════════════════════════════════ */
+.hero{
+  background: #0a0f1a;
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 16px;
+  padding: 0;
+  margin-bottom: 20px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+.hero-cell{
+  padding: 22px 24px;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.hero-cell:last-child{border-right:none}
+.hero-cell.main-cell{
+  background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02));
+  border-right-color: rgba(239,68,68,0.2);
+  grid-column: span 1;
+}
+.hero-eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;
+}
+.hero-eyebrow.red{color:var(--red)}
+.hero-eyebrow.blue{color:var(--blue)}
+.hero-eyebrow.amber{color:var(--amber)}
+.hero-eyebrow.green{color:var(--green)}
+.hero-big{font-family:'DM Mono',monospace;line-height:1;font-weight:500;letter-spacing:-1px}
+.hero-big.red{color:var(--red)}
+.hero-big.blue{color:var(--blue)}
+.hero-big.amber{color:var(--amber)}
+.hero-big.green{color:var(--green)}
+.hero-big .unit{font-size:18px;letter-spacing:0;font-weight:400;color:var(--txt2)}
+.hero-sub{font-size:11px;color:var(--txt2);margin-top:6px;line-height:1.5}
+.hero-sub strong{color:var(--txt)}
+.hero-sub em{color:var(--red);font-style:normal;font-weight:600}
+
+/* DEFINITION BOX */
+.def-box{
+  background: rgba(239,68,68,0.06);
+  border: 1px dashed rgba(239,68,68,0.25);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.def-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.def-text{font-size:12px;color:var(--txt2);line-height:1.7}
+.def-text strong{color:var(--txt);font-weight:600}
+.def-text .chip{
+  display:inline-block;padding:1px 7px;border-radius:4px;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
+  background:rgba(255,255,255,0.07);color:var(--txt);border:1px solid var(--border2);
+}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px}
+.kc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+.kc.red{border-color:rgba(239,68,68,0.22)}
+.kc.green{border-color:rgba(16,185,129,0.22)}
+.kc.amber{border-color:rgba(245,158,11,0.18)}
+.kc.blue{border-color:rgba(59,130,246,0.22)}
+.kc-dot{width:6px;height:6px;border-radius:50%;position:absolute;top:14px;right:14px}
+.kc-dot.r{background:var(--red)} .kc-dot.g{background:var(--green)} .kc-dot.a{background:var(--amber)} .kc-dot.b{background:var(--blue)}
+.kc-label{font-size:11px;color:var(--txt2);font-weight:500;margin-bottom:8px;line-height:1.4;padding-right:14px}
+.kc-value{font-family:'DM Mono',monospace;font-size:28px;font-weight:500;line-height:1;letter-spacing:-0.5px}
+.kc-value.r{color:var(--red)} .kc-value.g{color:var(--green)} .kc-value.a{color:var(--amber)} .kc-value.b{color:var(--blue)}
+.kc-sub{font-size:11px;color:var(--txt3);margin-top:5px}
+.pbar{background:rgba(255,255,255,0.04);border-radius:3px;height:3px;margin-top:8px}
+.pbar-fill{height:100%;border-radius:3px;transition:width 0.5s}
+
+/* SECTIONS */
+.stitle{font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--txt2);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.stitle::after{content:'';flex:1;height:1px;background:var(--border)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:22px}
+.g12{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:22px}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:22px}
+.mb22{margin-bottom:22px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.ctitle{font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ctitle .badge{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700;white-space:nowrap}
+.b-red{background:var(--red-dim);color:var(--red)} .b-blue{background:var(--blue-dim);color:var(--blue)}
+.b-amber{background:var(--amber-dim);color:var(--amber)} .b-green{background:var(--green-dim);color:var(--green)}
+
+/* TIPO COMPARISON */
+.tipo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tipo-block{border-radius:10px;padding:16px}
+.tipo-block.n{background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18)}
+.tipo-block.u{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.18)}
+.tbt{font-size:12px;font-weight:700;letter-spacing:0.5px;margin-bottom:12px}
+.tbt.bl{color:var(--blue)} .tbt.am{color:var(--amber)}
+.tm{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px}
+.tm:last-child{border-bottom:none}
+.tm span:first-child{color:var(--txt2)}
+.tm .tmv{font-weight:600;font-family:'DM Mono',monospace;font-size:13px}
+.tm .tmv.r{color:var(--red)} .tm .tmv.g{color:var(--green)} .tm .tmv.a{color:var(--amber)} .tm .tmv.b{color:var(--blue)}
+
+/* TABLES */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{text-align:left;padding:8px 12px;font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+thead th.right{text-align:right}
+tbody td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--txt)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(255,255,255,0.018)}
+.tdn{font-family:'DM Mono',monospace;font-size:12px}
+.tdn.right{text-align:right}
+.tdn.r{color:var(--red)} .tdn.g{color:var(--green)} .tdn.a{color:var(--amber)} .tdn.b{color:var(--blue)}
+.tnm{font-weight:600;font-size:12px}
+
+/* PILLS */
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;font-family:'DM Mono',monospace}
+.pr{background:var(--red-dim);color:var(--red)} .pg{background:var(--green-dim);color:var(--green)} .pa{background:var(--amber-dim);color:var(--amber)} .pb{background:var(--blue-dim);color:var(--blue)}
+
+/* SIN SEGUIMIENTO BLOCK */
+.ss-block{
+  background: linear-gradient(135deg, rgba(239,68,68,0.07), rgba(239,68,68,0.02));
+  border: 1px solid rgba(239,68,68,0.22);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.ss-num-wrap{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-width:110px;border-right:1px solid rgba(239,68,68,0.15);padding-right:26px;margin-right:26px;
+}
+.ss-num{font-family:'DM Mono',monospace;font-size:72px;color:var(--red);font-weight:500;line-height:1}
+.ss-num-label{font-size:10px;color:var(--red);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-top:4px}
+.ss-detail{flex:1}
+.ss-title{font-size:16px;font-weight:700;color:var(--red);margin-bottom:6px}
+.ss-desc{font-size:12px;color:var(--txt2);line-height:1.6;margin-bottom:14px}
+.ss-desc .chip{display:inline-block;padding:1px 7px;border-radius:4px;background:rgba(239,68,68,0.12);color:var(--red);font-family:'DM Mono',monospace;font-size:11px;border:1px solid rgba(239,68,68,0.2)}
+.ss-splits{display:flex;gap:28px;flex-wrap:wrap}
+.ss-split span:first-child{font-size:10px;color:var(--txt3);display:block;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px}
+.ss-split span.val{font-family:'DM Mono',monospace;font-size:22px;font-weight:500}
+.ss-split span.val.r{color:var(--red)} .ss-split span.val.b{color:var(--blue)} .ss-split span.val.a{color:var(--amber)} .ss-split span.val.g{color:var(--green)}
+
+/* ANTIGÜEDAD BARS — solo sin gestión */
+.antig-wrap{display:flex;flex-direction:column;gap:10px}
+.antig-row{display:flex;align-items:center;gap:10px}
+.antig-label{font-size:11px;color:var(--txt2);width:70px;flex-shrink:0}
+.antig-bar-bg{flex:1;background:rgba(255,255,255,0.04);border-radius:5px;height:32px;overflow:hidden;position:relative}
+.antig-bar{height:100%;border-radius:5px;display:flex;align-items:center;padding:0 10px;gap:6px;transition:width 0.6s ease}
+.antig-bar span.bc{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#fff}
+.antig-bar span.bs{font-size:11px;color:rgba(255,255,255,0.6)}
+.antig-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--txt3);width:40px;text-align:right;flex-shrink:0}
+
+/* CHART */
+canvas{max-height:220px}
+.chart-wrap{position:relative}
+
+/* FOOTER */
+.footer{text-align:center;padding:20px;font-size:11px;color:var(--txt3);border-top:1px solid var(--border);margin-top:8px}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* HIGHLIGHT ROW */
+tbody tr.highlight-red td{background:rgba(239,68,68,0.05)}
+
+/* WORST ALERT */
+.worst-row{
+  background: rgba(239,68,68,0.08) !important;
+  border-left: 3px solid var(--red) !important;
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div id="alert" class="alert info">🔄 Cargando datos desde Google Sheets...</div>
-    
-    <div class="header">
-      <div class="header-left">
-        <div class="logo">🚗</div>
-        <div>
-          <h1>Gestión de <span>Leads</span></h1>
-          <p id="lastUpdate">Conectando...</p>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-badge">B2</div>
+    <div>
+      <div class="logo-text"><b>B2</b> Autos — Dashboard Comercial</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <span class="hm-pill gray">16 Mar 2026 · Temuco</span>
+    <span class="hm-pill blue" id="headerTotal">506 leads</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- FILTERS -->
+  <div class="fc">
+    <div class="fh">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor"><path d="M1 2h10l-4 5v4l-2-1V7L1 2z"/></svg>
+      Filtros
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label>Fecha desde</label>
+        <input type="date" id="fDesde" value="2026-02-01">
+      </div>
+      <div class="fg">
+        <label>Fecha hasta</label>
+        <input type="date" id="fHasta" value="2026-03-16">
+      </div>
+      <div class="fg">
+        <label>Vendedor</label>
+        <select id="fVendedor"><option value="">Todos</option></select>
+      </div>
+      <div class="fg">
+        <label>Campaña</label>
+        <select id="fCampana"><option value="">Todas</option></select>
+      </div>
+      <div class="fg">
+        <label>Estado</label>
+        <select id="fEstado"><option value="">Todos</option></select>
+      </div>
+      <div class="fg">
+        <label>Gestión</label>
+        <select id="fGestion">
+          <option value="">Todos</option>
+          <option value="sg">Sin gestión (Contactado y Estado vacíos)</option>
+          <option value="cg">Con gestión (algún dato registrado)</option>
+          <option value="ct">Contesta</option>
+          <option value="nc">No contesta</option>
+          <option value="fe">Fono erróneo</option>
+        </select>
+      </div>
+      <button class="btn-rst" onclick="resetFilters()">↺ Limpiar</button>
+    </div>
+  </div>
+
+  <!-- DEFINICIÓN DE LA MÉTRICA -->
+  <div class="def-box">
+    <div class="def-icon">📌</div>
+    <div class="def-text">
+      <strong>Definición clave de este dashboard:</strong>
+      El indicador central mide el <strong>tiempo transcurrido desde la fecha y hora exacta de asignación de cada lead</strong>, contando solo aquellos que <strong>no tienen ningún dato registrado</strong> ni en <span class="chip">Contactado</span> ni en <span class="chip">Estado</span>.
+      Este tiempo no mide cuánto lleva asignado el lead en general — mide <strong>cuántas horas/días lleva ese lead esperando su primera acción comercial sin que nadie haya intervenido.</strong>
+    </div>
+  </div>
+
+  <!-- HERO: TIEMPO SIN SEGUIMIENTO -->
+  <div class="hero">
+    <div class="hero-cell main-cell">
+      <div class="hero-eyebrow red">⏱ Tiempo promedio sin seguimiento</div>
+      <div class="hero-big red" id="heroHoras" style="font-size:48px">—<span class="unit">h</span></div>
+      <div class="hero-sub" id="heroDias">— días en promedio</div>
+      <div class="hero-sub" style="margin-top:6px">
+        Leads <strong>sin Contactado ni Estado</strong> — tiempo desde asignación hasta hoy
+      </div>
+    </div>
+    <div class="hero-cell">
+      <div class="hero-eyebrow red">🔴 Peor caso registrado</div>
+      <div class="hero-big red" id="heroMax" style="font-size:40px">—<span class="unit">h</span></div>
+      <div class="hero-sub" id="heroMaxInfo">— días · —</div>
+    </div>
+    <div class="hero-cell">
+      <div class="hero-eyebrow blue">📦 Nuevos sin seguimiento</div>
+      <div class="hero-big blue" id="heroNSH" style="font-size:36px">—<span class="unit">h</span></div>
+      <div class="hero-sub" id="heroNSD">—</div>
+    </div>
+    <div class="hero-cell">
+      <div class="hero-eyebrow amber">🔶 Usados sin seguimiento</div>
+      <div class="hero-big amber" id="heroUSH" style="font-size:36px">—<span class="unit">h</span></div>
+      <div class="hero-sub" id="heroUSD">—</div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kc blue">
+      <div class="kc-dot b"></div>
+      <div class="kc-label">Total Leads analizados</div>
+      <div class="kc-value b" id="kpiTotal">—</div>
+      <div class="kc-sub" id="kpiTipoSplit">— nuevos · — usados</div>
+    </div>
+    <div class="kc red">
+      <div class="kc-dot r"></div>
+      <div class="kc-label">Leads sin gestión</div>
+      <div class="kc-value r" id="kpiSinG">—</div>
+      <div class="kc-sub" id="kpiSinGPct">— del total</div>
+      <div class="pbar"><div class="pbar-fill" id="pbarSinG" style="background:var(--red)"></div></div>
+    </div>
+    <div class="kc green">
+      <div class="kc-dot g"></div>
+      <div class="kc-label">Contactabilidad</div>
+      <div class="kc-value g" id="kpiCont">—</div>
+      <div class="kc-sub" id="kpiContN">— con algún registro en Contactado</div>
+      <div class="pbar"><div class="pbar-fill" id="pbarCont" style="background:var(--green)"></div></div>
+    </div>
+    <div class="kc amber">
+      <div class="kc-dot a"></div>
+      <div class="kc-label">Agendados</div>
+      <div class="kc-value a" id="kpiAg">—</div>
+      <div class="kc-sub" id="kpiAgN">— leads agendados</div>
+      <div class="pbar"><div class="pbar-fill" id="pbarAg" style="background:var(--amber)"></div></div>
+    </div>
+    <div class="kc red">
+      <div class="kc-dot r"></div>
+      <div class="kc-label">Leads críticos (8+ días sin gestión)</div>
+      <div class="kc-value r" id="kpiCrit">—</div>
+      <div class="kc-sub" id="kpiCritInfo">— del total</div>
+      <div class="pbar"><div class="pbar-fill" id="pbarCrit" style="background:var(--red)"></div></div>
+    </div>
+  </div>
+
+  <!-- BLOQUE SIN SEGUIMIENTO -->
+  <div class="ss-block">
+    <div class="ss-num-wrap">
+      <div class="ss-num" id="ssNum">—</div>
+      <div class="ss-num-label">sin gestión</div>
+    </div>
+    <div class="ss-detail">
+      <div class="ss-title">Leads sin primera acción comercial</div>
+      <div class="ss-desc">
+        Estos leads tienen <span class="chip">Contactado</span> y <span class="chip">Estado</span> completamente vacíos desde el momento de asignación.
+        El tiempo contabilizado parte exactamente desde la hora registrada en la fecha de asignación.
+      </div>
+      <div class="ss-splits">
+        <div class="ss-split">
+          <span>Nuevos sin gestión</span>
+          <span class="val b" id="ssNuevos">—</span>
         </div>
-      </div>
-      <div class="filters">
-        <select class="select-box" id="filtroTipo" onchange="aplicarFiltros()">
-          <option value="todos">📦 Todos</option>
-          <option value="nuevos">🚗 Nuevos</option>
-          <option value="usados">🔄 Usados</option>
-        </select>
-        <select class="select-box" id="filtroVendedor" onchange="aplicarFiltros()">
-          <option value="todos">👥 Vendedores</option>
-        </select>
-        <select class="select-box" id="filtroContacto" onchange="aplicarFiltros()">
-          <option value="todos">📞 Contacto</option>
-          <option value="Contesta">✅ Contesta</option>
-          <option value="No contesta">📵 No contesta</option>
-          <option value="Sin gestionar">⚠️ Sin gestionar</option>
-        </select>
-        <select class="select-box" id="filtroEstado" onchange="aplicarFiltros()">
-          <option value="todos">📋 Estado</option>
-          <option value="Agendado">🟢 Agendado</option>
-          <option value="Cierre de negocio">🏆 Cierre</option>
-          <option value="Otros ( dejar obs)">🟡 Otros</option>
-          <option value="No interesado">🔴 No interesado</option>
-          <option value="Desiste">❌ Desiste</option>
-        </select>
-        <button class="btn-primary" id="btnRefresh" onclick="cargarDatos()">🔄 Actualizar</button>
-      </div>
-    </div>
-    
-    <div class="kpis">
-      <div class="kpi-card cyan">
-        <div class="label">Total Leads</div>
-        <div class="value" id="kpiTotal">-</div>
-      </div>
-      <div class="kpi-card green">
-        <div class="label">Tasa Contacto</div>
-        <div class="value" id="kpiContacto">-</div>
-      </div>
-      <div class="kpi-card red">
-        <div class="label">Sin Gestionar</div>
-        <div class="value" id="kpiSinGestionar">-</div>
-      </div>
-      <div class="kpi-card gold">
-        <div class="label">🏆 Cierres</div>
-        <div class="value" id="kpiCierres">-</div>
-      </div>
-    </div>
-    
-    <div class="charts-grid">
-      <div class="card">
-        <h3>📊 Gestión por Vendedor</h3>
-        <div class="chart-container"><canvas id="chartVendedores"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>🎯 Estados de Seguimiento</h3>
-        <div class="chart-container"><canvas id="chartEstados"></canvas></div>
-      </div>
-      <div class="card chart-full">
-        <h3>📈 Efectividad por Vendedor</h3>
-        <div class="chart-container"><canvas id="chartEfectividad"></canvas></div>
-      </div>
-    </div>
-    
-    <div class="card">
-      <h3>📋 Detalle de Leads (<span id="totalLeads">0</span>)</h3>
-      <div id="tableContainer">
-        <div class="loading">
-          <div class="loading-spinner"></div>
-          Cargando leads...
+        <div class="ss-split">
+          <span>Usados sin gestión</span>
+          <span class="val a" id="ssUsados">—</span>
+        </div>
+        <div class="ss-split">
+          <span>% del total</span>
+          <span class="val r" id="ssPct">—</span>
+        </div>
+        <div class="ss-split">
+          <span>Prom. horas esperando</span>
+          <span class="val r" id="ssHoras">—</span>
+        </div>
+        <div class="ss-split">
+          <span>Máx. horas sin acción</span>
+          <span class="val r" id="ssMaxHoras">—</span>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- ANTIGÜEDAD SIN GESTIÓN + ESTADOS -->
+  <div class="g21">
+    <div class="card">
+      <div class="ctitle">
+        ⏳ Tiempo sin gestión por tramo — solo leads sin Contactado ni Estado
+        <span class="badge b-red" id="badgeAntigCrit">— críticos</span>
+      </div>
+      <div class="antig-wrap" id="antigWrap"></div>
+      <div style="margin-top:14px;padding:10px;background:rgba(255,255,255,0.02);border-radius:8px;font-size:11px;color:var(--txt3);border:1px solid var(--border)">
+        ⚠ El tiempo mostrado en cada barra es el tiempo exacto desde asignación que esos leads llevan esperando su primer contacto.
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Distribución por Estado</div>
+      <div class="chart-wrap"><canvas id="chartEstados"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TIPO COMPARATIVA -->
+  <div class="card mb22">
+    <div class="ctitle">Comparativa NUEVOS vs USADOS</div>
+    <div class="tipo-grid">
+      <div class="tipo-block n">
+        <div class="tbt bl">▲ AUTOS NUEVOS</div>
+        <div class="tm"><span>Total leads</span><span class="tmv b" id="tnTot">—</span></div>
+        <div class="tm"><span>Contactabilidad</span><span class="tmv g" id="tnCont">—</span></div>
+        <div class="tm"><span>Agendados</span><span class="tmv a" id="tnAg">—</span></div>
+        <div class="tm"><span>Sin gestión</span><span class="tmv r" id="tnSG">—</span></div>
+        <div class="tm"><span>Horas prom. sin gestión</span><span class="tmv r" id="tnHS">—</span></div>
+        <div class="tm"><span>Días prom. sin gestión</span><span class="tmv b" id="tnDS">—</span></div>
+        <div class="tm"><span>Peor caso (horas)</span><span class="tmv r" id="tnMax">—</span></div>
+      </div>
+      <div class="tipo-block u">
+        <div class="tbt am">▲ AUTOS USADOS</div>
+        <div class="tm"><span>Total leads</span><span class="tmv a" id="tuTot">—</span></div>
+        <div class="tm"><span>Contactabilidad</span><span class="tmv g" id="tuCont">—</span></div>
+        <div class="tm"><span>Agendados</span><span class="tmv a" id="tuAg">—</span></div>
+        <div class="tm"><span>Sin gestión</span><span class="tmv r" id="tuSG">—</span></div>
+        <div class="tm"><span>Horas prom. sin gestión</span><span class="tmv r" id="tuHS">—</span></div>
+        <div class="tm"><span>Días prom. sin gestión</span><span class="tmv a" id="tuDS">—</span></div>
+        <div class="tm"><span>Peor caso (horas)</span><span class="tmv r" id="tuMax">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VENDEDORES -->
+  <div class="card mb22">
+    <div class="ctitle">
+      Resumen por Vendedor
+      <span class="badge b-red">Las celdas rojas indican leads sin gestión con más tiempo acumulado</span>
+    </div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>Vendedor</th>
+            <th class="right">Leads</th>
+            <th class="right">Nuevos</th>
+            <th class="right">Usados</th>
+            <th>Contactabilidad</th>
+            <th>Agendados</th>
+            <th class="right">Sin gestión</th>
+            <th class="right" title="Horas promedio sin acción, contando desde la asignación exacta, solo leads sin Contactado ni Estado">⏱ Prom. horas sin gestión</th>
+            <th class="right" title="Máximo de horas sin gestión entre sus leads no gestionados">⚠ Máx. horas sin gestión</th>
+            <th class="right" title="Días promedio sin acción">Días prom.</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyVend"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CAMPAÑA -->
+  <div class="card mb22">
+    <div class="ctitle">Resumen por Campaña</div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>Campaña</th>
+            <th class="right">Leads</th>
+            <th>Contactabilidad</th>
+            <th>Agendados</th>
+            <th class="right">Sin gestión</th>
+            <th class="right">⏱ Prom. horas sin gestión</th>
+            <th class="right">Días prom. sin gestión</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyCamp"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="g2">
+    <div class="card">
+      <div class="ctitle">Top Campañas por Volumen</div>
+      <div class="chart-wrap"><canvas id="chartCamp"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Leads por Vendedor (Nuevos / Usados / Sin gestión)</div>
+      <div class="chart-wrap"><canvas id="chartVend"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  B2 Autos · Temuco, Chile · Datos al 16 de marzo de 2026 · <strong id="footerN">—</strong> leads desde 16 hojas de trabajo
+</div>
+
 <script>
-// ============ CONFIGURACIÓN ============
-const API_URL = 'https://script.google.com/macros/s/AKfycbxBmtwoF0lBxyDKJ9WRXZjojldLDogkpK9mCwDALIi3vedf4qu7OvLuMaibQ2HI-XHn/exec';
+const RAW = [{"t":"N","f":"2026-02-07","v":"Andrea Moreno","c":"VIDEO REELS B2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":910.7,"da":37.95,"r":null},{"t":"N","f":"2026-02-07","v":"Andrea Moreno","c":"VIDEO REELS B2","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":905.3,"da":37.72,"r":null},{"t":"N","f":"2026-02-07","v":"Andrea Moreno","c":"VIDEO REELS B2","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":898.3,"da":37.43,"r":null},{"t":"N","f":"2026-02-07","v":"Andrea Moreno","c":"VD1","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":896.1,"da":37.34,"r":null},{"t":"N","f":"2026-02-08","v":"Andrea Moreno","c":"VD3","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":871.7,"da":36.32,"r":null},{"t":"N","f":"2026-02-08","v":"Andrea Moreno","c":"VIDEO REELS B2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":872.7,"da":36.36,"r":null},{"t":"N","f":"2026-02-08","v":"Andrea Moreno","c":"VIDEO REELS B2","ct":"","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":872.7,"da":36.36,"r":null},{"t":"N","f":"2026-02-09","v":"Andrea Moreno","c":"REELS RODRIGO RIDDARA","ct":"","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":858.2,"da":35.76,"r":null},{"t":"U","f":"2026-02-06","v":"Andrea Moreno","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":914.3,"ds":38.1,"ha":914.3,"da":38.1,"r":"8+ días"},{"t":"U","f":"2026-02-07","v":"Andrea Moreno","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":903.2,"ds":37.63,"ha":903.2,"da":37.63,"r":"8+ días"},{"t":"U","f":"2026-02-07","v":"Andrea Moreno","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":902.4,"ds":37.6,"ha":902.4,"da":37.6,"r":"8+ días"},{"t":"U","f":"2026-02-07","v":"Andrea Moreno","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":893.4,"ds":37.22,"ha":893.4,"da":37.22,"r":"8+ días"},{"t":"U","f":"2026-02-07","v":"Andrea Moreno","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":904.8,"ds":37.7,"ha":904.8,"da":37.7,"r":"8+ días"},{"t":"U","f":"2026-02-08","v":"Andrea Moreno","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":875.1,"ds":36.46,"ha":875.1,"da":36.46,"r":"8+ días"},{"t":"U","f":"2026-02-08","v":"Andrea Moreno","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":871.8,"ds":36.33,"ha":871.8,"da":36.33,"r":"8+ días"},{"t":"U","f":"2026-03-13","v":"Andrea Moreno","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":76.0,"ds":3.17,"ha":76.0,"da":3.17,"r":"4-7 días"},{"t":"U","f":"2026-03-13","v":"Andrea Moreno","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":74.2,"ds":3.09,"ha":74.2,"da":3.09,"r":"4-7 días"},{"t":"U","f":"2026-03-14","v":"Andrea Moreno","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":65.1,"ds":2.71,"ha":65.1,"da":2.71,"r":"2-3 días"},{"t":"N","f":"2026-02-13","v":"Milton","c":"VD3","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":746.0,"da":31.09,"r":null},{"t":"N","f":"2026-02-14","v":"Milton","c":"FOTO 1 - FONDO NEGRO AHORRAS 9M","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":742.9,"da":30.95,"r":null},{"t":"N","f":"2026-02-14","v":"Milton","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":737.2,"da":30.72,"r":null},{"t":"N","f":"2026-02-14","v":"Milton","c":"FOTO 1 - FONDO NEGRO AHORRAS 9M","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":736.5,"da":30.69,"r":null},{"t":"N","f":"2026-02-15","v":"Milton","c":"VD3","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":708.8,"da":29.53,"r":null},{"t":"N","f":"2026-02-15","v":"Milton","c":"VD3","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":702.8,"da":29.28,"r":null},{"t":"N","f":"2026-02-15","v":"Milton","c":"REELS RODRIGO RIDDARA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":701.8,"da":29.24,"r":null},{"t":"N","f":"2026-02-15","v":"Milton","c":"VIDEO REELS B2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":700.6,"da":29.19,"r":null},{"t":"N","f":"2026-02-15","v":"Milton","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":698.7,"da":29.11,"r":null},{"t":"N","f":"2026-02-18","v":"Milton","c":"FOTO 1- entrega duglaidys","ct":"Fono erroneo","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":639.7,"da":26.65,"r":null},{"t":"N","f":"2026-02-10","v":"Milton","c":"REELS RODRIGO RIDDARA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":835.1,"da":34.8,"r":null},{"t":"N","f":"2026-02-12","v":"Milton","c":"IMG2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":773.3,"da":32.22,"r":null},{"t":"N","f":"2026-02-12","v":"Milton","c":"IMG2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":773.3,"da":32.22,"r":null},{"t":"N","f":"2026-02-12","v":"Milton","c":"IMG2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":771.7,"da":32.15,"r":null},{"t":"N","f":"2026-02-12","v":"Milton","c":"IMG2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":771.0,"da":32.13,"r":null},{"t":"N","f":"2026-02-12","v":"Milton","c":"IMG1","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":769.7,"da":32.07,"r":null},{"t":"N","f":"2026-02-13","v":"Milton","c":"IMG1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":765.5,"da":31.9,"r":null},{"t":"N","f":"2026-02-13","v":"Milton","c":"IMG2","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":761.4,"da":31.72,"r":null},{"t":"N","f":"2026-02-13","v":"Milton","c":"IMG1","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":757.4,"da":31.56,"r":null},{"t":"N","f":"2026-02-17","v":"Milton","c":"IMG4","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":649.6,"da":27.07,"r":null},{"t":"N","f":"2026-02-18","v":"Milton","c":"IMG4","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":642.5,"da":26.77,"r":null},{"t":"N","f":"2026-02-19","v":"Milton","c":"VIDEO REELS B2","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":614.7,"da":25.61,"r":null},{"t":"N","f":"2026-02-19","v":"Milton","c":"IMG4","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":614.5,"da":25.6,"r":null},{"t":"N","f":"2026-02-19","v":"Milton","c":"REELS RODRIGO RIDDARA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":612.7,"da":25.53,"r":null},{"t":"N","f":"2026-02-21","v":"Milton","c":"IMG2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":569.2,"da":23.72,"r":null},{"t":"N","f":"2026-02-25","v":"Milton","c":"VD3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":461.7,"da":19.24,"r":null},{"t":"N","f":"2026-02-25","v":"Milton","c":"VD3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":461.1,"da":19.21,"r":null},{"t":"N","f":"2026-02-25","v":"Milton","c":"VD3","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":460.6,"da":19.19,"r":null},{"t":"N","f":"2026-02-25","v":"Milton","c":"ADS 1","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":460.2,"da":19.18,"r":null},{"t":"N","f":"2026-02-25","v":"Milton","c":"ADS 1","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":459.1,"da":19.13,"r":null},{"t":"N","f":"2026-03-09","v":"Milton","c":"Video Andrea","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":169.3,"da":7.05,"r":null},{"t":"N","f":"2026-03-10","v":"Milton","c":"Video Andrea","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":167.8,"da":6.99,"r":null},{"t":"N","f":"2026-03-09","v":"Milton","c":"IMG MARCA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":169.1,"da":7.04,"r":null},{"t":"N","f":"2026-03-11","v":"Milton","c":"REELS ANDREA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":129.0,"da":5.38,"r":null},{"t":"N","f":"2026-03-11","v":"Milton","c":"REELS ANDREA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":126.8,"da":5.28,"r":null},{"t":"N","f":"2026-03-11","v":"Milton","c":"REELS ANDREA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":121.7,"da":5.07,"r":null},{"t":"N","f":"2026-03-13","v":"Milton","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":90.7,"ds":3.78,"ha":90.7,"da":3.78,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Milton","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":90.7,"ds":3.78,"ha":90.7,"da":3.78,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Milton","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":90.6,"ds":3.78,"ha":90.6,"da":3.78,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Milton","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":72.1,"ds":3.0,"ha":72.1,"da":3.0,"r":"2-3 días"},{"t":"N","f":"2026-03-14","v":"Milton","c":"IMG MARCA","ct":"","e":"","sg":true,"hs":72.0,"ds":3.0,"ha":72.0,"da":3.0,"r":"2-3 días"},{"t":"N","f":"2026-03-14","v":"Milton","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":68.5,"ds":2.85,"ha":68.5,"da":2.85,"r":"2-3 días"},{"t":"U","f":"2026-02-08","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":867.0,"da":36.13,"r":null},{"t":"U","f":"2026-02-08","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":866.5,"da":36.1,"r":null},{"t":"U","f":"2026-02-08","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":865.5,"da":36.06,"r":null},{"t":"U","f":"2026-02-08","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":864.9,"da":36.04,"r":null},{"t":"U","f":"2026-02-09","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":863.8,"da":35.99,"r":null},{"t":"U","f":"2026-02-09","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":849.0,"da":35.37,"r":null},{"t":"U","f":"2026-02-12","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":790.6,"da":32.94,"r":null},{"t":"U","f":"2026-02-12","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":785.4,"da":32.73,"r":null},{"t":"U","f":"2026-02-12","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":781.7,"da":32.57,"r":null},{"t":"U","f":"2026-02-13","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":762.0,"da":31.75,"r":null},{"t":"U","f":"2026-02-13","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":761.3,"da":31.72,"r":null},{"t":"U","f":"2026-02-15","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":702.0,"da":29.25,"r":null},{"t":"U","f":"2026-02-15","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":700.4,"da":29.18,"r":null},{"t":"U","f":"2026-02-19","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":605.9,"da":25.24,"r":null},{"t":"U","f":"2026-02-19","v":"Milton","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":605.3,"da":25.22,"r":null},{"t":"U","f":"2026-02-19","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":603.0,"da":25.12,"r":null},{"t":"U","f":"2026-02-19","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":602.4,"da":25.1,"r":null},{"t":"U","f":"2026-02-20","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":591.9,"da":24.66,"r":null},{"t":"U","f":"2026-02-20","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":590.5,"da":24.61,"r":null},{"t":"U","f":"2026-02-20","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":589.4,"da":24.56,"r":null},{"t":"U","f":"2026-02-20","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":584.0,"da":24.33,"r":null},{"t":"U","f":"2026-02-20","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":577.6,"da":24.07,"r":null},{"t":"U","f":"2026-02-20","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":576.5,"da":24.02,"r":null},{"t":"U","f":"2026-02-21","v":"Milton","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":572.2,"da":23.84,"r":null},{"t":"U","f":"2026-02-21","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":567.3,"da":23.64,"r":null},{"t":"U","f":"2026-02-22","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":536.3,"da":22.35,"r":null},{"t":"U","f":"2026-02-23","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":522.4,"da":21.77,"r":null},{"t":"U","f":"2026-02-22","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":534.2,"da":22.26,"r":null},{"t":"U","f":"2026-03-01","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":367.0,"da":15.29,"r":null},{"t":"U","f":"2026-03-01","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":369.1,"da":15.38,"r":null},{"t":"U","f":"2026-03-09","v":"Milton","c":"VIDEO PAGINA - HILUX","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":170.5,"da":7.11,"r":null},{"t":"U","f":"2026-03-09","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":170.4,"da":7.1,"r":null},{"t":"U","f":"2026-03-11","v":"Milton","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":138.0,"da":5.75,"r":null},{"t":"U","f":"2026-03-11","v":"Milton","c":"VIDEO PAGINA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":137.0,"da":5.71,"r":null},{"t":"U","f":"2026-03-12","v":"Milton","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":105.3,"ds":4.39,"ha":105.3,"da":4.39,"r":"4-7 días"},{"t":"U","f":"2026-03-12","v":"Milton","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":102.3,"ds":4.26,"ha":102.3,"da":4.26,"r":"4-7 días"},{"t":"U","f":"2026-03-12","v":"Milton","c":"VIDEO PAGINA - HILUX","ct":"","e":"","sg":true,"hs":99.5,"ds":4.15,"ha":99.5,"da":4.15,"r":"4-7 días"},{"t":"U","f":"2026-03-13","v":"Milton","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":81.1,"ds":3.38,"ha":81.1,"da":3.38,"r":"4-7 días"},{"t":"U","f":"2026-03-13","v":"Milton","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":78.2,"ds":3.26,"ha":78.2,"da":3.26,"r":"4-7 días"},{"t":"N","f":"2026-02-09","v":"Jaime","c":"VD | para chicas","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":860.1,"da":35.84,"r":null},{"t":"N","f":"2026-02-09","v":"Jaime","c":"VIDEO REELS B2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":854.9,"da":35.62,"r":null},{"t":"N","f":"2026-02-09","v":"Jaime","c":"VD | para chicas","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":853.6,"da":35.57,"r":null},{"t":"N","f":"2026-02-09","v":"Jaime","c":"VD3","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":845.9,"da":35.25,"r":null},{"t":"N","f":"2026-02-09","v":"Jaime","c":"VD3","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":845.7,"da":35.24,"r":null},{"t":"N","f":"2026-02-09","v":"Jaime","c":"VD | para chicas","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":844.9,"da":35.2,"r":null},{"t":"N","f":"2026-02-09","v":"Jaime","c":"VD | para chicas","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":843.7,"da":35.15,"r":null},{"t":"N","f":"2026-02-12","v":"Jaime","c":"IMG2","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":773.8,"da":32.24,"r":null},{"t":"N","f":"2026-02-12","v":"Jaime","c":"IMG2","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":773.6,"da":32.23,"r":null},{"t":"N","f":"2026-02-17","v":"Jaime","c":"IMG2","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":666.1,"da":27.75,"r":null},{"t":"N","f":"2026-02-17","v":"Jaime","c":"IMG2","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":654.3,"da":27.26,"r":null},{"t":"N","f":"2026-02-17","v":"Jaime","c":"IMG2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":664.0,"da":27.67,"r":null},{"t":"N","f":"2026-02-17","v":"Jaime","c":"IMG3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":650.8,"da":27.12,"r":null},{"t":"N","f":"2026-02-17","v":"Jaime","c":"IMG2","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":652.0,"da":27.17,"r":null},{"t":"N","f":"2026-03-13","v":"Jaime","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":89.6,"ds":3.74,"ha":89.6,"da":3.74,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Jaime","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":73.7,"ds":3.07,"ha":73.7,"da":3.07,"r":"4-7 días"},{"t":"N","f":"2026-03-14","v":"Jaime","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":69.4,"ds":2.89,"ha":69.4,"da":2.89,"r":"2-3 días"},{"t":"U","f":"2026-02-10","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":828.3,"da":34.51,"r":null},{"t":"U","f":"2026-02-10","v":"Jaime","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":827.8,"da":34.49,"r":null},{"t":"U","f":"2026-02-10","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":822.7,"da":34.28,"r":null},{"t":"U","f":"2026-02-10","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":818.3,"da":34.1,"r":null},{"t":"U","f":"2026-02-12","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":774.1,"da":32.25,"r":null},{"t":"U","f":"2026-02-12","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":771.9,"da":32.16,"r":null},{"t":"U","f":"2026-02-12","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":773.4,"da":32.23,"r":null},{"t":"U","f":"2026-02-13","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":751.1,"da":31.29,"r":null},{"t":"U","f":"2026-02-13","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":748.5,"da":31.19,"r":null},{"t":"U","f":"2026-02-13","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"","sg":false,"hs":null,"ds":null,"ha":748.4,"da":31.18,"r":null},{"t":"U","f":"2026-02-13","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":747.1,"da":31.13,"r":null},{"t":"U","f":"2026-02-15","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":709.0,"da":29.54,"r":null},{"t":"U","f":"2026-02-15","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":708.0,"da":29.5,"r":null},{"t":"U","f":"2026-02-15","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":706.8,"da":29.45,"r":null},{"t":"U","f":"2026-02-15","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":706.8,"da":29.45,"r":null},{"t":"U","f":"2026-02-15","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":702.4,"da":29.27,"r":null},{"t":"U","f":"2026-02-16","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":675.3,"da":28.14,"r":null},{"t":"U","f":"2026-02-16","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":674.1,"da":28.09,"r":null},{"t":"U","f":"2026-02-16","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":674.1,"da":28.09,"r":null},{"t":"U","f":"2026-02-21","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":562.4,"da":23.44,"r":null},{"t":"U","f":"2026-02-21","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":561.7,"da":23.41,"r":null},{"t":"U","f":"2026-02-21","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":561.0,"da":23.37,"r":null},{"t":"U","f":"2026-02-21","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":560.1,"da":23.34,"r":null},{"t":"U","f":"2026-02-21","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":558.9,"da":23.29,"r":null},{"t":"U","f":"2026-02-26","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":443.1,"da":18.46,"r":null},{"t":"U","f":"2026-02-26","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"vendiendo su auto , busca camioneta mitsubishi","sg":false,"hs":null,"ds":null,"ha":446.2,"da":18.59,"r":null},{"t":"U","f":"2026-02-26","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":442.9,"da":18.46,"r":null},{"t":"U","f":"2026-02-26","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":441.9,"da":18.41,"r":null},{"t":"U","f":"2026-02-26","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"de yumbel , busca camioneta , opcion de toyota se envia informacion detallada al whatsapp","sg":false,"hs":null,"ds":null,"ha":439.8,"da":18.32,"r":null},{"t":"U","f":"2026-02-27","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":421.8,"da":17.57,"r":null},{"t":"U","f":"2026-02-27","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":421.7,"da":17.57,"r":null},{"t":"U","f":"2026-02-27","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":419.6,"da":17.48,"r":null},{"t":"U","f":"2026-02-27","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":416.4,"da":17.35,"r":null},{"t":"U","f":"2026-02-27","v":"Jaime","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":419.5,"da":17.48,"r":null},{"t":"U","f":"2026-03-01","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":372.6,"da":15.53,"r":null},{"t":"U","f":"2026-03-01","v":"Jaime","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":369.6,"da":15.4,"r":null},{"t":"U","f":"2026-03-12","v":"Jaime","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":111.2,"ds":4.63,"ha":111.2,"da":4.63,"r":"4-7 días"},{"t":"U","f":"2026-03-12","v":"Jaime","c":"VIDEO PAGINA - HILUX","ct":"","e":"","sg":true,"hs":110.2,"ds":4.59,"ha":110.2,"da":4.59,"r":"4-7 días"},{"t":"U","f":"2026-03-12","v":"Jaime","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":107.8,"ds":4.49,"ha":107.8,"da":4.49,"r":"4-7 días"},{"t":"U","f":"2026-03-13","v":"Jaime","c":"VIDEO PAGINA - HILUX","ct":"","e":"","sg":true,"hs":87.8,"ds":3.66,"ha":87.8,"da":3.66,"r":"4-7 días"},{"t":"U","f":"2026-03-13","v":"Jaime","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":85.1,"ds":3.55,"ha":85.1,"da":3.55,"r":"4-7 días"},{"t":"U","f":"2026-02-12","v":"Duglaidys","c":"VIDEO PAGINA","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":771.8,"da":32.16,"r":null},{"t":"U","f":"2026-02-12","v":"Duglaidys","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":768.4,"da":32.02,"r":null},{"t":"U","f":"2026-02-12","v":"Duglaidys","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":769.1,"da":32.04,"r":null},{"t":"U","f":"2026-02-15","v":"Duglaidys","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":698.6,"da":29.11,"r":null},{"t":"U","f":"2026-02-15","v":"Duglaidys","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":696.7,"da":29.03,"r":null},{"t":"U","f":"2026-02-15","v":"Duglaidys","c":"VIDEO PAGINA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":697.4,"da":29.06,"r":null},{"t":"U","f":"2026-02-15","v":"Duglaidys","c":"VIDEO PAGINA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":696.6,"da":29.02,"r":null},{"t":"U","f":"2026-02-26","v":"Duglaidys","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":438.5,"da":18.27,"r":null},{"t":"U","f":"2026-02-26","v":"Duglaidys","c":"VIDEO PAGINA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":435.6,"da":18.15,"r":null},{"t":"U","f":"2026-02-26","v":"Duglaidys","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":435.4,"da":18.14,"r":null},{"t":"U","f":"2026-02-26","v":"Duglaidys","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":434.7,"da":18.11,"r":null},{"t":"U","f":"2026-02-27","v":"Duglaidys","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":414.9,"da":17.29,"r":null},{"t":"U","f":"2026-02-27","v":"Duglaidys","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":414.3,"da":17.26,"r":null},{"t":"U","f":"2026-02-28","v":"Duglaidys","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":393.6,"da":16.4,"r":null},{"t":"U","f":"2026-02-28","v":"Duglaidys","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":394.0,"da":16.42,"r":null},{"t":"U","f":"2026-02-28","v":"Duglaidys","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":390.3,"da":16.26,"r":null},{"t":"U","f":"2026-02-28","v":"Duglaidys","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":390.3,"da":16.26,"r":null},{"t":"U","f":"2026-03-09","v":"Duglaidys","c":"VIDEO PAGINA - HILUX","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":175.1,"da":7.3,"r":null},{"t":"U","f":"2026-03-09","v":"Duglaidys","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":171.0,"da":7.12,"r":null},{"t":"U","f":"2026-03-11","v":"Duglaidys","c":"VIDEO PAGINA - HILUX","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":135.2,"da":5.63,"r":null},{"t":"U","f":"2026-03-11","v":"Duglaidys","c":"VIDEO PAGINA - HILUX","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":130.3,"da":5.43,"r":null},{"t":"U","f":"2026-03-11","v":"Duglaidys","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":128.4,"da":5.35,"r":null},{"t":"U","f":"2026-03-11","v":"Duglaidys","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":126.2,"da":5.26,"r":null},{"t":"U","f":"2026-03-12","v":"Duglaidys","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":98.0,"ds":4.08,"ha":98.0,"da":4.08,"r":"4-7 días"},{"t":"U","f":"2026-03-12","v":"Duglaidys","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":97.0,"ds":4.04,"ha":97.0,"da":4.04,"r":"4-7 días"},{"t":"U","f":"2026-03-13","v":"Duglaidys","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":89.3,"ds":3.72,"ha":89.3,"da":3.72,"r":"4-7 días"},{"t":"N","f":"2026-02-06","v":"Duglaidys","c":"VIDEO REELS B2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":926.3,"da":38.6,"r":null},{"t":"N","f":"2026-02-06","v":"Duglaidys","c":"VIDEO REELS B2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":923.3,"da":38.47,"r":null},{"t":"N","f":"2026-02-06","v":"Duglaidys","c":"VD3","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":920.2,"da":38.34,"r":null},{"t":"N","f":"2026-02-06","v":"Duglaidys","c":"VIDEO REELS B2","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":922.0,"da":38.42,"r":null},{"t":"N","f":"2026-02-06","v":"Duglaidys","c":"VIDEO REELS B2","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":921.2,"da":38.38,"r":null},{"t":"N","f":"2026-02-06","v":"Duglaidys","c":"VIDEO REELS B2","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":917.0,"da":38.21,"r":null},{"t":"N","f":"2026-02-06","v":"Duglaidys","c":"VD3","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":913.2,"da":38.05,"r":null},{"t":"N","f":"2026-02-10","v":"Duglaidys","c":"VD | para chicas","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":829.6,"da":34.57,"r":null},{"t":"N","f":"2026-02-10","v":"Duglaidys","c":"VD | para chicas","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":826.4,"da":34.43,"r":null},{"t":"N","f":"2026-02-10","v":"Duglaidys","c":"VD3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":825.6,"da":34.4,"r":null},{"t":"N","f":"2026-02-10","v":"Duglaidys","c":"VD | para chicas","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":824.5,"da":34.35,"r":null},{"t":"N","f":"2026-02-16","v":"Duglaidys","c":"REELS RODRIGO RIDDARA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":686.0,"da":28.58,"r":null},{"t":"N","f":"2026-02-16","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":682.3,"da":28.43,"r":null},{"t":"N","f":"2026-02-16","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":676.6,"da":28.19,"r":null},{"t":"N","f":"2026-02-17","v":"Duglaidys","c":"ADS 2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":657.5,"da":27.4,"r":null},{"t":"N","f":"2026-02-17","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":652.2,"da":27.18,"r":null},{"t":"N","f":"2026-02-17","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":649.8,"da":27.08,"r":null},{"t":"N","f":"2026-02-10","v":"Duglaidys","c":"REELS RODRIGO RIDDARA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":828.2,"da":34.51,"r":null},{"t":"N","f":"2026-02-12","v":"Duglaidys","c":"IMG2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":776.8,"da":32.37,"r":null},{"t":"N","f":"2026-02-12","v":"Duglaidys","c":"IMG2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":771.0,"da":32.13,"r":null},{"t":"N","f":"2026-02-15","v":"Duglaidys","c":"IMG2","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":713.6,"da":29.73,"r":null},{"t":"N","f":"2026-02-15","v":"Duglaidys","c":"IMG2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":706.8,"da":29.45,"r":null},{"t":"N","f":"2026-02-15","v":"Duglaidys","c":"IMG1","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":713.3,"da":29.72,"r":null},{"t":"N","f":"2026-02-15","v":"Duglaidys","c":"IMG1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":711.1,"da":29.63,"r":null},{"t":"N","f":"2026-02-15","v":"Duglaidys","c":"IMG2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":697.0,"da":29.04,"r":null},{"t":"N","f":"2026-02-18","v":"Duglaidys","c":"REELS RODRIGO RIDDARA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":632.8,"da":26.37,"r":null},{"t":"N","f":"2026-02-18","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":631.8,"da":26.32,"r":null},{"t":"N","f":"2026-02-18","v":"Duglaidys","c":"REELS RODRIGO RIDDARA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":627.1,"da":26.13,"r":null},{"t":"N","f":"2026-02-18","v":"Duglaidys","c":"IMG2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":626.5,"da":26.1,"r":null},{"t":"N","f":"2026-02-18","v":"Duglaidys","c":"IMG2","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":625.1,"da":26.05,"r":null},{"t":"N","f":"2026-02-18","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":624.7,"da":26.03,"r":null},{"t":"N","f":"2026-02-19","v":"Duglaidys","c":"VIDEO REELS B2","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":615.8,"da":25.66,"r":null},{"t":"N","f":"2026-02-19","v":"Duglaidys","c":"IMG2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":603.5,"da":25.15,"r":null},{"t":"N","f":"2026-02-19","v":"Duglaidys","c":"VIDEO REELS B2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":601.9,"da":25.08,"r":null},{"t":"N","f":"2026-02-19","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":601.4,"da":25.06,"r":null},{"t":"N","f":"2026-02-21","v":"Duglaidys","c":"IMG4","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":559.9,"da":23.33,"r":null},{"t":"N","f":"2026-02-23","v":"Duglaidys","c":"IMG2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":521.7,"da":21.74,"r":null},{"t":"N","f":"2026-02-25","v":"Duglaidys","c":"VD3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":471.6,"da":19.65,"r":null},{"t":"N","f":"2026-02-25","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":470.4,"da":19.6,"r":null},{"t":"N","f":"2026-02-25","v":"Duglaidys","c":"ADS 1","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":467.9,"da":19.5,"r":null},{"t":"N","f":"2026-02-25","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":466.6,"da":19.44,"r":null},{"t":"N","f":"2026-02-25","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":465.7,"da":19.4,"r":null},{"t":"N","f":"2026-02-27","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":422.1,"da":17.59,"r":null},{"t":"N","f":"2026-02-27","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":414.6,"da":17.28,"r":null},{"t":"N","f":"2026-02-27","v":"Duglaidys","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":418.0,"da":17.42,"r":null},{"t":"N","f":"2026-02-27","v":"Duglaidys","c":"VD3","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":414.0,"da":17.25,"r":null},{"t":"N","f":"2026-03-09","v":"Duglaidys","c":"IMG2","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":186.9,"da":7.79,"r":null},{"t":"N","f":"2026-03-09","v":"Duglaidys","c":"IMG3","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":185.6,"da":7.73,"r":null},{"t":"N","f":"2026-03-09","v":"Duglaidys","c":"IMG2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":182.7,"da":7.61,"r":null},{"t":"N","f":"2026-03-09","v":"Duglaidys","c":"IMG1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":176.9,"da":7.37,"r":null},{"t":"N","f":"2026-03-10","v":"Duglaidys","c":"REELS ANDREA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":158.2,"da":6.59,"r":null},{"t":"N","f":"2026-03-10","v":"Duglaidys","c":"IMG3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":154.9,"da":6.45,"r":null},{"t":"N","f":"2026-03-10","v":"Duglaidys","c":"Video Andrea","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":148.1,"da":6.17,"r":null},{"t":"N","f":"2026-03-11","v":"Duglaidys","c":"REELS ANDREA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":138.2,"da":5.76,"r":null},{"t":"N","f":"2026-03-12","v":"Duglaidys","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":110.2,"ds":4.59,"ha":110.2,"da":4.59,"r":"4-7 días"},{"t":"N","f":"2026-03-12","v":"Duglaidys","c":"IMG1","ct":"","e":"","sg":true,"hs":107.8,"ds":4.49,"ha":107.8,"da":4.49,"r":"4-7 días"},{"t":"N","f":"2026-03-12","v":"Duglaidys","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":100.3,"ds":4.18,"ha":100.3,"da":4.18,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Duglaidys","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":78.7,"ds":3.28,"ha":78.7,"da":3.28,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Duglaidys","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":75.0,"ds":3.13,"ha":75.0,"da":3.13,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Duglaidys","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":74.7,"ds":3.11,"ha":74.7,"da":3.11,"r":"4-7 días"},{"t":"N","f":"2026-03-14","v":"Duglaidys","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":66.6,"ds":2.77,"ha":66.6,"da":2.77,"r":"2-3 días"},{"t":"N","f":"2026-03-14","v":"Duglaidys","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":66.1,"ds":2.75,"ha":66.1,"da":2.75,"r":"2-3 días"},{"t":"N","f":"2026-03-13","v":"Andrea G","c":"IMG MARCA","ct":"","e":"","sg":true,"hs":74.4,"ds":3.1,"ha":74.4,"da":3.1,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Andrea G","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":74.1,"ds":3.09,"ha":74.1,"da":3.09,"r":"4-7 días"},{"t":"N","f":"2026-02-09","v":"Renzo","c":"VD3","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":843.0,"da":35.13,"r":null},{"t":"N","f":"2026-02-09","v":"Renzo","c":"VD | para chicas","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":842.3,"da":35.1,"r":null},{"t":"N","f":"2026-02-10","v":"Renzo","c":"VD3","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":834.1,"da":34.75,"r":null},{"t":"N","f":"2026-02-10","v":"Renzo","c":"VD3","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":824.1,"da":34.34,"r":null},{"t":"N","f":"2026-02-10","v":"Renzo","c":"VD3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":817.5,"da":34.06,"r":null},{"t":"N","f":"2026-02-11","v":"Renzo","c":"VD3","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":815.9,"da":33.99,"r":null},{"t":"N","f":"2026-02-12","v":"Renzo","c":"ADS 1","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":770.7,"da":32.11,"r":null},{"t":"N","f":"2026-02-12","v":"Renzo","c":"FOTO 4 - NEUTRO","ct":"Fono erroneo","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":769.0,"da":32.04,"r":null},{"t":"N","f":"2026-02-13","v":"Renzo","c":"ADS 1","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":760.5,"da":31.69,"r":null},{"t":"N","f":"2026-02-13","v":"Renzo","c":"VIDEO REELS B2","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":753.2,"da":31.38,"r":null},{"t":"N","f":"2026-02-13","v":"Renzo","c":"VIDEO REELS B2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":749.3,"da":31.22,"r":null},{"t":"N","f":"2026-02-13","v":"Renzo","c":"VD3","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":748.0,"da":31.17,"r":null},{"t":"N","f":"2026-02-14","v":"Renzo","c":"FOTO 1- entrega duglaidys 2","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":728.4,"da":30.35,"r":null},{"t":"N","f":"2026-02-14","v":"Renzo","c":"VD3","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":730.6,"da":30.44,"r":null},{"t":"N","f":"2026-02-14","v":"Renzo","c":"ADS 1","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":726.6,"da":30.27,"r":null},{"t":"N","f":"2026-02-14","v":"Renzo","c":"VD3","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":725.5,"da":30.23,"r":null},{"t":"N","f":"2026-02-14","v":"Renzo","c":"VIDEO REELS B2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":724.9,"da":30.2,"r":null},{"t":"N","f":"2026-02-12","v":"Renzo","c":"IMG1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":775.3,"da":32.31,"r":null},{"t":"N","f":"2026-02-13","v":"Renzo","c":"IMG1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":750.8,"da":31.28,"r":null},{"t":"N","f":"2026-02-13","v":"Renzo","c":"IMG1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":750.6,"da":31.27,"r":null},{"t":"N","f":"2026-02-13","v":"Renzo","c":"IMG1","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":749.9,"da":31.25,"r":null},{"t":"N","f":"2026-02-13","v":"Renzo","c":"IMG1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":750.0,"da":31.25,"r":null},{"t":"N","f":"2026-02-13","v":"Renzo","c":"IMG2","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":744.6,"da":31.02,"r":null},{"t":"N","f":"2026-02-19","v":"Renzo","c":"VIDEO REELS B2","ct":"Fono erroneo","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":607.0,"da":25.29,"r":null},{"t":"N","f":"2026-02-19","v":"Renzo","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":606.0,"da":25.25,"r":null},{"t":"N","f":"2026-02-19","v":"Renzo","c":"VIDEO REELS B2","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":604.4,"da":25.18,"r":null},{"t":"N","f":"2026-02-23","v":"Renzo","c":"IMG2","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":514.5,"da":21.44,"r":null},{"t":"N","f":"2026-02-23","v":"Renzo","c":"VD3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":504.8,"da":21.03,"r":null},{"t":"N","f":"2026-02-24","v":"Renzo","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":499.2,"da":20.8,"r":null},{"t":"N","f":"2026-02-23","v":"Renzo","c":"VD3","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":505.3,"da":21.06,"r":null},{"t":"N","f":"2026-02-24","v":"Renzo","c":"ADS 1","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":485.3,"da":20.22,"r":null},{"t":"N","f":"2026-02-24","v":"Renzo","c":"ADS 1","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":484.7,"da":20.2,"r":null},{"t":"N","f":"2026-02-24","v":"Renzo","c":"VD3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":481.7,"da":20.07,"r":null},{"t":"N","f":"2026-02-25","v":"Renzo","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":464.3,"da":19.35,"r":null},{"t":"N","f":"2026-02-26","v":"Renzo","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":436.1,"da":18.17,"r":null},{"t":"N","f":"2026-02-26","v":"Renzo","c":"ADS 1","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":432.1,"da":18.01,"r":null},{"t":"N","f":"2026-02-26","v":"Renzo","c":"ADS 1","ct":"Fono erroneo","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":435.3,"da":18.14,"r":null},{"t":"N","f":"2026-02-27","v":"Renzo","c":"VD3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":423.4,"da":17.64,"r":null},{"t":"N","f":"2026-02-28","v":"Renzo","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":393.1,"da":16.38,"r":null},{"t":"N","f":"2026-02-28","v":"Renzo","c":"ADS 1","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":392.4,"da":16.35,"r":null},{"t":"N","f":"2026-02-28","v":"Renzo","c":"VD3","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":386.0,"da":16.08,"r":null},{"t":"N","f":"2026-02-28","v":"Renzo","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":389.5,"da":16.23,"r":null},{"t":"N","f":"2026-03-09","v":"Renzo","c":"REELS ANDREA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":175.0,"da":7.29,"r":null},{"t":"N","f":"2026-03-09","v":"Renzo","c":"REELS ANDREA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":172.9,"da":7.2,"r":null},{"t":"N","f":"2026-03-09","v":"Renzo","c":"REELS ANDREA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":175.0,"da":7.29,"r":null},{"t":"N","f":"2026-03-11","v":"Renzo","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":132.1,"ds":5.5,"ha":132.1,"da":5.5,"r":"4-7 días"},{"t":"N","f":"2026-03-11","v":"Renzo","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":132.3,"ds":5.51,"ha":132.3,"da":5.51,"r":"4-7 días"},{"t":"N","f":"2026-03-11","v":"Renzo","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":130.6,"ds":5.44,"ha":130.6,"da":5.44,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Renzo","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":85.6,"ds":3.57,"ha":85.6,"da":3.57,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Renzo","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":84.9,"ds":3.54,"ha":84.9,"da":3.54,"r":"4-7 días"},{"t":"N","f":"2026-03-14","v":"Renzo","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":64.8,"ds":2.7,"ha":64.8,"da":2.7,"r":"2-3 días"},{"t":"U","f":"2026-02-05","v":"Renzo","c":"Sin Campaña","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":937.5,"da":39.06,"r":null},{"t":"U","f":"2026-02-06","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":931.6,"da":38.82,"r":null},{"t":"U","f":"2026-02-06","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":926.3,"da":38.6,"r":null},{"t":"U","f":"2026-02-06","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":927.8,"da":38.66,"r":null},{"t":"U","f":"2026-02-06","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":924.6,"da":38.52,"r":null},{"t":"U","f":"2026-02-06","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":921.7,"da":38.4,"r":null},{"t":"U","f":"2026-02-06","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":918.7,"da":38.28,"r":null},{"t":"U","f":"2026-02-11","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":805.0,"da":33.54,"r":null},{"t":"U","f":"2026-02-11","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":804.8,"da":33.53,"r":null},{"t":"U","f":"2026-02-11","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":804.3,"da":33.51,"r":null},{"t":"U","f":"2026-02-11","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":802.6,"da":33.44,"r":null},{"t":"U","f":"2026-02-14","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":734.5,"da":30.6,"r":null},{"t":"U","f":"2026-02-14","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":734.0,"da":30.58,"r":null},{"t":"U","f":"2026-02-14","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":733.9,"da":30.58,"r":null},{"t":"U","f":"2026-02-17","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":671.7,"da":27.99,"r":null},{"t":"U","f":"2026-02-16","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":673.7,"da":28.07,"r":null},{"t":"U","f":"2026-02-17","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":665.9,"da":27.75,"r":null},{"t":"U","f":"2026-02-17","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":661.2,"da":27.55,"r":null},{"t":"U","f":"2026-02-18","v":"Renzo","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":627.3,"da":26.14,"r":null},{"t":"U","f":"2026-02-18","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":626.6,"da":26.11,"r":null},{"t":"U","f":"2026-02-19","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":617.7,"da":25.74,"r":null},{"t":"U","f":"2026-02-19","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":617.4,"da":25.72,"r":null},{"t":"U","f":"2026-02-19","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":614.2,"da":25.59,"r":null},{"t":"U","f":"2026-02-21","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":555.9,"da":23.16,"r":null},{"t":"U","f":"2026-02-21","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":555.8,"da":23.16,"r":null},{"t":"U","f":"2026-02-21","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":554.3,"da":23.1,"r":null},{"t":"U","f":"2026-02-21","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":554.2,"da":23.09,"r":null},{"t":"U","f":"2026-02-22","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":544.3,"da":22.68,"r":null},{"t":"U","f":"2026-02-25","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":463.8,"da":19.33,"r":null},{"t":"U","f":"2026-02-25","v":"Renzo","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":463.3,"da":19.31,"r":null},{"t":"U","f":"2026-03-10","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":146.9,"da":6.12,"r":null},{"t":"U","f":"2026-03-10","v":"Renzo","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":146.5,"da":6.11,"r":null},{"t":"U","f":"2026-03-11","v":"Renzo","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":139.6,"ds":5.82,"ha":139.6,"da":5.82,"r":"4-7 días"},{"t":"U","f":"2026-03-13","v":"Renzo","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":78.1,"ds":3.25,"ha":78.1,"da":3.25,"r":"4-7 días"},{"t":"U","f":"2026-03-13","v":"Renzo","c":"VIDEO PAGINA","ct":"","e":"","sg":true,"hs":77.9,"ds":3.24,"ha":77.9,"da":3.24,"r":"4-7 días"},{"t":"N","f":"2026-02-08","v":"Alejandro","c":"VIDEO REELS B2","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":873.0,"da":36.37,"r":null},{"t":"N","f":"2026-02-07","v":"Alejandro","c":"VIDEO REELS B2","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":889.8,"da":37.07,"r":null},{"t":"N","f":"2026-02-08","v":"Alejandro","c":"VD1","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":887.9,"da":37.0,"r":null},{"t":"N","f":"2026-02-08","v":"Alejandro","c":"VD1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":870.0,"da":36.25,"r":null},{"t":"N","f":"2026-02-08","v":"Alejandro","c":"VIDEO REELS B2","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":869.8,"da":36.24,"r":null},{"t":"N","f":"2026-02-08","v":"Alejandro","c":"VIDEO REELS B2","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":866.4,"da":36.1,"r":null},{"t":"N","f":"2026-02-13","v":"Alejandro","c":"REELS RODRIGO RIDDARA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":760.4,"da":31.68,"r":null},{"t":"N","f":"2026-02-13","v":"Alejandro","c":"FOTO 1- entrega duglaidys","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":759.4,"da":31.64,"r":null},{"t":"N","f":"2026-02-15","v":"Alejandro","c":"FOTO 1- entrega duglaidys","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":698.0,"da":29.09,"r":null},{"t":"N","f":"2026-02-15","v":"Alejandro","c":"ADS 2","ct":"Contesta","e":"","sg":false,"hs":null,"ds":null,"ha":697.7,"da":29.07,"r":null},{"t":"N","f":"2026-02-14","v":"Alejandro","c":"IMG1","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":743.8,"da":30.99,"r":null},{"t":"N","f":"2026-02-14","v":"Alejandro","c":"IMG2","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":742.3,"da":30.93,"r":null},{"t":"N","f":"2026-02-14","v":"Alejandro","c":"IMG2","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":735.3,"da":30.64,"r":null},{"t":"N","f":"2026-02-14","v":"Alejandro","c":"IMG2","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":733.8,"da":30.57,"r":null},{"t":"N","f":"2026-02-14","v":"Alejandro","c":"IMG1","ct":"","e":"","sg":true,"hs":724.9,"ds":30.21,"ha":724.9,"da":30.21,"r":"8+ días"},{"t":"N","f":"2026-02-14","v":"Alejandro","c":"IMG1","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":724.8,"da":30.2,"r":null},{"t":"N","f":"2026-02-14","v":"Alejandro","c":"IMG1","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":720.5,"da":30.02,"r":null},{"t":"N","f":"2026-02-18","v":"Alejandro","c":"IMG2","ct":"Contesta","e":"","sg":false,"hs":null,"ds":null,"ha":637.6,"da":26.57,"r":null},{"t":"N","f":"2026-02-18","v":"Alejandro","c":"ADS 1","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":635.5,"da":26.48,"r":null},{"t":"N","f":"2026-02-24","v":"Alejandro","c":"ADS 1","ct":"Fono erroneo","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":494.8,"da":20.62,"r":null},{"t":"N","f":"2026-02-24","v":"Alejandro","c":"VD3","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":491.9,"da":20.5,"r":null},{"t":"N","f":"2026-02-24","v":"Alejandro","c":"VD3","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":494.5,"da":20.61,"r":null},{"t":"U","f":"2026-02-10","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":818.1,"da":34.09,"r":null},{"t":"U","f":"2026-02-10","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":817.0,"da":34.04,"r":null},{"t":"U","f":"2026-02-11","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"","sg":false,"hs":null,"ds":null,"ha":811.3,"da":33.8,"r":null},{"t":"U","f":"2026-02-11","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":809.4,"da":33.73,"r":null},{"t":"U","f":"2026-02-11","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":801.7,"da":33.41,"r":null},{"t":"U","f":"2026-02-11","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":797.1,"da":33.21,"r":null},{"t":"U","f":"2026-02-11","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":795.1,"da":33.13,"r":null},{"t":"U","f":"2026-02-11","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":792.3,"da":33.01,"r":null},{"t":"U","f":"2026-02-14","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":731.5,"da":30.48,"r":null},{"t":"U","f":"2026-02-14","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":723.3,"da":30.14,"r":null},{"t":"U","f":"2026-02-14","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":722.8,"da":30.12,"r":null},{"t":"U","f":"2026-02-16","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":677.3,"da":28.22,"r":null},{"t":"U","f":"2026-02-16","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"","sg":false,"hs":null,"ds":null,"ha":675.7,"da":28.16,"r":null},{"t":"U","f":"2026-02-16","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"","sg":false,"hs":null,"ds":null,"ha":675.6,"da":28.15,"r":null},{"t":"U","f":"2026-02-17","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":654.7,"da":27.28,"r":null},{"t":"U","f":"2026-02-17","v":"Alejandro","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":652.0,"da":27.16,"r":null},{"t":"U","f":"2026-02-17","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":651.3,"da":27.14,"r":null},{"t":"U","f":"2026-02-18","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":635.8,"da":26.49,"r":null},{"t":"U","f":"2026-02-18","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":636.2,"da":26.51,"r":null},{"t":"U","f":"2026-02-18","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":632.7,"da":26.36,"r":null},{"t":"U","f":"2026-02-18","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":632.6,"da":26.36,"r":null},{"t":"U","f":"2026-02-19","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":601.4,"da":25.06,"r":null},{"t":"U","f":"2026-02-20","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":595.7,"da":24.82,"r":null},{"t":"U","f":"2026-02-20","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":593.3,"da":24.72,"r":null},{"t":"U","f":"2026-02-20","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":581.3,"da":24.22,"r":null},{"t":"U","f":"2026-02-20","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":580.0,"da":24.17,"r":null},{"t":"U","f":"2026-02-20","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":579.7,"da":24.15,"r":null},{"t":"U","f":"2026-02-22","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":541.4,"da":22.56,"r":null},{"t":"U","f":"2026-02-22","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":542.3,"da":22.6,"r":null},{"t":"U","f":"2026-02-22","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":537.6,"da":22.4,"r":null},{"t":"U","f":"2026-02-22","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":544.1,"da":22.67,"r":null},{"t":"U","f":"2026-02-22","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":537.5,"da":22.4,"r":null},{"t":"U","f":"2026-02-24","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":493.6,"da":20.57,"r":null},{"t":"U","f":"2026-02-24","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":488.9,"da":20.37,"r":null},{"t":"U","f":"2026-02-24","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":485.8,"da":20.24,"r":null},{"t":"U","f":"2026-02-24","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":483.0,"da":20.12,"r":null},{"t":"U","f":"2026-02-25","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":458.8,"da":19.12,"r":null},{"t":"U","f":"2026-02-25","v":"Alejandro","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":457.7,"da":19.07,"r":null},{"t":"U","f":"2026-02-25","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":457.4,"da":19.06,"r":null},{"t":"U","f":"2026-02-26","v":"Alejandro","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":434.6,"da":18.11,"r":null},{"t":"U","f":"2026-02-26","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":433.8,"da":18.08,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":425.3,"da":17.72,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":425.2,"da":17.72,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":424.8,"da":17.7,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":413.4,"da":17.23,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":412.1,"da":17.17,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":413.3,"da":17.22,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":410.8,"da":17.12,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Agendado","sg":false,"hs":null,"ds":null,"ha":410.6,"da":17.11,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"","sg":false,"hs":null,"ds":null,"ha":409.2,"da":17.05,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":408.1,"da":17.0,"r":null},{"t":"U","f":"2026-02-27","v":"Alejandro","c":"VIDEO PAGINA","ct":"No contesta","e":"","sg":false,"hs":null,"ds":null,"ha":408.4,"da":17.02,"r":null},{"t":"U","f":"2026-02-28","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":388.5,"da":16.19,"r":null},{"t":"U","f":"2026-03-01","v":"Alejandro","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":383.0,"da":15.96,"r":null},{"t":"U","f":"2026-03-01","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":375.1,"da":15.63,"r":null},{"t":"U","f":"2026-03-01","v":"Alejandro","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":374.9,"da":15.62,"r":null},{"t":"N","f":"2026-02-11","v":"Kevin","c":"VD3","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":797.4,"da":33.23,"r":null},{"t":"N","f":"2026-02-11","v":"Kevin","c":"VD3","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":795.9,"da":33.16,"r":null},{"t":"N","f":"2026-02-11","v":"Kevin","c":"VIDEO REELS B2","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":795.5,"da":33.15,"r":null},{"t":"N","f":"2026-02-12","v":"Kevin","c":"VIDEO REELS B2","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":784.2,"da":32.67,"r":null},{"t":"N","f":"2026-02-12","v":"Kevin","c":"VD3","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":783.7,"da":32.65,"r":null},{"t":"N","f":"2026-02-13","v":"Kevin","c":"VD3","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":748.0,"da":31.17,"r":null},{"t":"N","f":"2026-02-13","v":"Kevin","c":"ADS 1","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":747.3,"da":31.14,"r":null},{"t":"N","f":"2026-02-13","v":"Kevin","c":"ADS 1","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":747.3,"da":31.14,"r":null},{"t":"N","f":"2026-02-13","v":"Kevin","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":747.0,"da":31.13,"r":null},{"t":"N","f":"2026-02-13","v":"Kevin","c":"VD3","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":746.6,"da":31.11,"r":null},{"t":"N","f":"2026-02-14","v":"Kevin","c":"FOTO 6 - colagge 2","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":724.0,"da":30.17,"r":null},{"t":"N","f":"2026-02-14","v":"Kevin","c":"ADS 1","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":723.4,"da":30.14,"r":null},{"t":"N","f":"2026-02-14","v":"Kevin","c":"VD3","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":720.0,"da":30.0,"r":null},{"t":"N","f":"2026-02-15","v":"Kevin","c":"REELS RODRIGO RIDDARA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":714.4,"da":29.77,"r":null},{"t":"N","f":"2026-02-15","v":"Kevin","c":"FOTO 1- entrega duglaidys","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":709.0,"da":29.54,"r":null},{"t":"N","f":"2026-02-17","v":"Kevin","c":"ADS 1","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":664.7,"da":27.7,"r":null},{"t":"N","f":"2026-02-12","v":"Kevin","c":"IMG1","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":774.3,"da":32.26,"r":null},{"t":"N","f":"2026-02-12","v":"Kevin","c":"IMG1","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":774.2,"da":32.26,"r":null},{"t":"N","f":"2026-02-12","v":"Kevin","c":"IMG1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":774.1,"da":32.25,"r":null},{"t":"N","f":"2026-02-12","v":"Kevin","c":"IMG2","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":773.8,"da":32.24,"r":null},{"t":"N","f":"2026-02-16","v":"Kevin","c":"IMG2","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":687.3,"da":28.64,"r":null},{"t":"N","f":"2026-02-16","v":"Kevin","c":"IMG2","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":683.9,"da":28.49,"r":null},{"t":"N","f":"2026-02-16","v":"Kevin","c":"IMG2","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":675.0,"da":28.12,"r":null},{"t":"N","f":"2026-02-16","v":"Kevin","c":"IMG4","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":674.3,"da":28.1,"r":null},{"t":"N","f":"2026-02-17","v":"Kevin","c":"IMG2","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":666.6,"da":27.77,"r":null},{"t":"N","f":"2026-02-26","v":"Kevin","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":448.4,"da":18.68,"r":null},{"t":"N","f":"2026-02-26","v":"Kevin","c":"ADS 1","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":446.7,"da":18.61,"r":null},{"t":"N","f":"2026-02-26","v":"Kevin","c":"VD3","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":441.7,"da":18.41,"r":null},{"t":"N","f":"2026-02-26","v":"Kevin","c":"ADS 1","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":436.4,"da":18.18,"r":null},{"t":"N","f":"2026-02-27","v":"Kevin","c":"ADS 1","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":410.9,"da":17.12,"r":null},{"t":"N","f":"2026-02-27","v":"Kevin","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":410.7,"da":17.11,"r":null},{"t":"N","f":"2026-02-28","v":"Kevin","c":"ADS 1","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":406.8,"da":16.95,"r":null},{"t":"N","f":"2026-02-28","v":"Kevin","c":"VD3","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":399.8,"da":16.66,"r":null},{"t":"N","f":"2026-03-01","v":"Kevin","c":"ADS 1","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":372.7,"da":15.53,"r":null},{"t":"N","f":"2026-03-01","v":"Kevin","c":"ADS 1","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":373.2,"da":15.55,"r":null},{"t":"N","f":"2026-03-01","v":"Kevin","c":"ADS 1","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":371.9,"da":15.49,"r":null},{"t":"N","f":"2026-03-09","v":"Kevin","c":"IMG1","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":176.8,"da":7.37,"r":null},{"t":"N","f":"2026-03-09","v":"Kevin","c":"REELS ANDREA","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":176.3,"da":7.35,"r":null},{"t":"N","f":"2026-03-09","v":"Kevin","c":"REELS ANDREA","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":176.0,"da":7.33,"r":null},{"t":"N","f":"2026-03-09","v":"Kevin","c":"IMG3","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":175.1,"da":7.3,"r":null},{"t":"N","f":"2026-03-12","v":"Kevin","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":99.9,"ds":4.16,"ha":99.9,"da":4.16,"r":"4-7 días"},{"t":"N","f":"2026-03-12","v":"Kevin","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":97.6,"ds":4.06,"ha":97.6,"da":4.06,"r":"4-7 días"},{"t":"N","f":"2026-03-12","v":"Kevin","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":97.1,"ds":4.05,"ha":97.1,"da":4.05,"r":"4-7 días"},{"t":"N","f":"2026-03-12","v":"Kevin","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":96.9,"ds":4.04,"ha":96.9,"da":4.04,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Kevin","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":83.5,"ds":3.48,"ha":83.5,"da":3.48,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Kevin","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":81.1,"ds":3.38,"ha":81.1,"da":3.38,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Kevin","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":82.0,"ds":3.42,"ha":82.0,"da":3.42,"r":"4-7 días"},{"t":"N","f":"2026-03-13","v":"Kevin","c":"REELS ANDREA","ct":"","e":"","sg":true,"hs":79.7,"ds":3.32,"ha":79.7,"da":3.32,"r":"4-7 días"},{"t":"U","f":"2026-02-09","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":847.6,"da":35.32,"r":null},{"t":"U","f":"2026-02-09","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":846.4,"da":35.27,"r":null},{"t":"U","f":"2026-02-09","v":"Kevin","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":844.3,"da":35.18,"r":null},{"t":"U","f":"2026-02-09","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":843.9,"da":35.16,"r":null},{"t":"U","f":"2026-02-09","v":"Kevin","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":842.5,"da":35.11,"r":null},{"t":"U","f":"2026-02-09","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":842.8,"da":35.12,"r":null},{"t":"U","f":"2026-02-10","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":834.9,"da":34.79,"r":null},{"t":"U","f":"2026-02-09","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":841.6,"da":35.07,"r":null},{"t":"U","f":"2026-02-12","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":778.4,"da":32.43,"r":null},{"t":"U","f":"2026-02-12","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":774.7,"da":32.28,"r":null},{"t":"U","f":"2026-02-12","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":774.2,"da":32.26,"r":null},{"t":"U","f":"2026-02-14","v":"Kevin","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":732.6,"da":30.52,"r":null},{"t":"U","f":"2026-02-14","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":732.4,"da":30.52,"r":null},{"t":"U","f":"2026-02-16","v":"Kevin","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":681.7,"da":28.4,"r":null},{"t":"U","f":"2026-02-16","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":681.3,"da":28.39,"r":null},{"t":"U","f":"2026-02-16","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":680.9,"da":28.37,"r":null},{"t":"U","f":"2026-02-17","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":662.7,"da":27.61,"r":null},{"t":"U","f":"2026-02-17","v":"Kevin","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":661.9,"da":27.58,"r":null},{"t":"U","f":"2026-02-18","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":646.8,"da":26.95,"r":null},{"t":"U","f":"2026-02-17","v":"Kevin","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":651.1,"da":27.13,"r":null},{"t":"U","f":"2026-02-18","v":"Kevin","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":639.9,"da":26.66,"r":null},{"t":"U","f":"2026-02-18","v":"Kevin","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":639.8,"da":26.66,"r":null},{"t":"U","f":"2026-02-19","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":613.6,"da":25.57,"r":null},{"t":"U","f":"2026-02-19","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":611.4,"da":25.47,"r":null},{"t":"U","f":"2026-02-19","v":"Kevin","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":609.7,"da":25.41,"r":null},{"t":"U","f":"2026-02-20","v":"Kevin","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":579.1,"da":24.13,"r":null},{"t":"U","f":"2026-02-20","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":578.3,"da":24.1,"r":null},{"t":"U","f":"2026-02-20","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":577.6,"da":24.07,"r":null},{"t":"U","f":"2026-02-23","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":519.9,"da":21.66,"r":null},{"t":"U","f":"2026-02-23","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":519.4,"da":21.64,"r":null},{"t":"U","f":"2026-02-24","v":"Kevin","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":499.2,"da":20.8,"r":null},{"t":"U","f":"2026-02-24","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":497.2,"da":20.72,"r":null},{"t":"U","f":"2026-02-24","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":482.6,"da":20.11,"r":null},{"t":"U","f":"2026-02-24","v":"Kevin","c":"VIDEO PAGINA","ct":"Fono erroneo","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":482.5,"da":20.1,"r":null},{"t":"U","f":"2026-02-25","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":462.5,"da":19.27,"r":null},{"t":"U","f":"2026-02-25","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":461.6,"da":19.23,"r":null},{"t":"U","f":"2026-02-25","v":"Kevin","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":459.7,"da":19.16,"r":null},{"t":"U","f":"2026-02-28","v":"Kevin","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":407.3,"da":16.97,"r":null},{"t":"U","f":"2026-02-28","v":"Kevin","c":"VIDEO PAGINA","ct":"No contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":404.2,"da":16.84,"r":null},{"t":"U","f":"2026-03-09","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":187.6,"da":7.82,"r":null},{"t":"U","f":"2026-03-09","v":"Kevin","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":177.6,"da":7.4,"r":null},{"t":"U","f":"2026-03-09","v":"Kevin","c":"VIDEO PAGINA - HILUX","ct":"Contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":175.3,"da":7.3,"r":null},{"t":"U","f":"2026-03-10","v":"Kevin","c":"VIDEO PAGINA","ct":"Contesta","e":"Desiste","sg":false,"hs":null,"ds":null,"ha":152.2,"da":6.34,"r":null},{"t":"U","f":"2026-03-10","v":"Kevin","c":"VIDEO PAGINA - HILUX","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":151.0,"da":6.29,"r":null},{"t":"U","f":"2026-03-10","v":"Kevin","c":"VIDEO PAGINA - HILUX","ct":"No contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":149.3,"da":6.22,"r":null},{"t":"U","f":"2026-03-11","v":"Kevin","c":"VIDEO PAGINA","ct":"No contesta","e":"No interesado","sg":false,"hs":null,"ds":null,"ha":124.9,"da":5.21,"r":null},{"t":"U","f":"2026-03-11","v":"Kevin","c":"VIDEO PAGINA - HILUX","ct":"Contesta","e":"Otros ( dejar obs)","sg":false,"hs":null,"ds":null,"ha":123.6,"da":5.15,"r":null}];
 
-let todosLosLeads = [];
-let vendedores = [];
-let charts = {};
+Chart.defaults.color='#8896b0';
+Chart.defaults.font.family="'DM Sans',sans-serif";
+const CC={bl:'#3b82f6',am:'#f59e0b',gr:'#10b981',rd:'#ef4444',pu:'#8b5cf6',pi:'#ec4899',te:'#14b8a6',or:'#f97316',in:'#6366f1',sk:'#0ea5e9'};
+const CA=Object.values(CC);
+let charts={};
 
-// Cargar al iniciar
-window.onload = cargarDatos;
+function pct(n,d,dec=1){if(!d)return'0%';return(n/d*100).toFixed(dec)+'%'}
+function avg(arr){if(!arr.length)return null;return arr.reduce((a,b)=>a+b,0)/arr.length}
+function fmt(v,d=1){if(v===null||v===undefined)return'—';return v.toFixed(d)}
+function isAg(l){return l.e&&l.e.toLowerCase().includes('agendado')}
+function hasCt(l){return!!(l.ct)}
 
-function cargarDatos() {
-  document.getElementById('btnRefresh').disabled = true;
-  document.getElementById('alert').className = 'alert info';
-  document.getElementById('alert').innerHTML = '🔄 Cargando datos...';
-  
-  // Usar JSONP para evitar CORS
-  const callbackName = 'jsonpCallback_' + Date.now();
-  
-  window[callbackName] = function(data) {
-    delete window[callbackName];
-    document.body.removeChild(script);
-    procesarDatos(data);
-  };
-  
-  const script = document.createElement('script');
-  script.src = API_URL + '?callback=' + callbackName;
-  script.onerror = function() {
-    document.getElementById('alert').className = 'alert error';
-    document.getElementById('alert').innerHTML = '❌ Error de conexión. <a href="' + API_URL + '" target="_blank" style="color:#60a5fa">Prueba abrir la API directamente</a>';
-    document.getElementById('btnRefresh').disabled = false;
-  };
-  document.body.appendChild(script);
-}
-
-function procesarDatos(data) {
-  document.getElementById('btnRefresh').disabled = false;
-  
-  if (data.error) {
-    document.getElementById('alert').className = 'alert error';
-    document.getElementById('alert').innerHTML = '❌ Error: ' + data.error;
-    return;
-  }
-  
-  todosLosLeads = data.leads || [];
-  vendedores = data.vendedores || [];
-  
-  // Llenar vendedores
-  const sel = document.getElementById('filtroVendedor');
-  sel.innerHTML = '<option value="todos">👥 Vendedores</option>' + 
-    vendedores.map(v => '<option value="' + v.nombre + '">' + v.nombre + '</option>').join('');
-  
-  document.getElementById('lastUpdate').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-CL');
-  document.getElementById('alert').className = 'alert success';
-  document.getElementById('alert').innerHTML = '✅ ' + todosLosLeads.length + ' leads cargados de ' + vendedores.length + ' vendedores';
-  
-  aplicarFiltros();
-}
-
-function aplicarFiltros() {
-  const tipo = document.getElementById('filtroTipo').value;
-  const vendedor = document.getElementById('filtroVendedor').value;
-  const contacto = document.getElementById('filtroContacto').value;
-  const estado = document.getElementById('filtroEstado').value;
-  
-  const leads = todosLosLeads.filter(l => 
-    (tipo === 'todos' || l.tipo === tipo) &&
-    (vendedor === 'todos' || l.vendedor === vendedor) &&
-    (contacto === 'todos' || l.contactado === contacto) &&
-    (estado === 'todos' || l.estado === estado)
-  );
-  
-  actualizarKPIs(leads);
-  actualizarTabla(leads);
-  actualizarGraficos(leads);
-}
-
-function actualizarKPIs(leads) {
-  const total = leads.length;
-  const contactados = leads.filter(l => l.contactado === 'Contesta').length;
-  const sinGestionar = leads.filter(l => !l.contactado || l.contactado === 'Sin gestionar').length;
-  const cierres = leads.filter(l => l.estado === 'Cierre de negocio').length;
-  
-  document.getElementById('kpiTotal').textContent = total;
-  document.getElementById('kpiContacto').textContent = total ? ((contactados/total)*100).toFixed(1) + '%' : '0%';
-  document.getElementById('kpiSinGestionar').textContent = sinGestionar;
-  document.getElementById('kpiCierres').textContent = cierres;
-}
-
-function actualizarTabla(leads) {
-  document.getElementById('totalLeads').textContent = leads.length;
-  
-  if (!leads.length) {
-    document.getElementById('tableContainer').innerHTML = '<p style="text-align:center;padding:40px;color:#64748b">No hay leads</p>';
-    return;
-  }
-  
-  let html = '<table><thead><tr><th>Cliente</th><th>Vendedor</th><th>Tipo</th><th>Contactado</th><th>Estado</th><th>Fecha</th><th>Obs</th></tr></thead><tbody>';
-  
-  leads.slice(0, 25).forEach(l => {
-    html += '<tr>' +
-      '<td style="font-weight:500">' + (l.nombre || '-') + '</td>' +
-      '<td style="color:#94a3b8">' + l.vendedor + '</td>' +
-      '<td><span class="badge ' + (l.tipo === 'nuevos' ? 'nuevo' : 'usado') + '">' + (l.tipo === 'nuevos' ? '🚗 Nuevo' : '🔄 Usado') + '</span></td>' +
-      '<td><span class="badge ' + badgeContacto(l.contactado) + '">' + textoContacto(l.contactado) + '</span></td>' +
-      '<td><span class="badge ' + badgeEstado(l.estado) + '">' + textoEstado(l.estado) + '</span></td>' +
-      '<td style="color:#64748b;font-family:monospace;font-size:12px">' + (l.fecha || '-') + '</td>' +
-      '<td class="obs-cell">' + (l.observaciones || '-') + '</td>' +
-    '</tr>';
+function getFiltered(){
+  const desde=document.getElementById('fDesde').value;
+  const hasta=document.getElementById('fHasta').value;
+  const vend=document.getElementById('fVendedor').value;
+  const camp=document.getElementById('fCampana').value;
+  const est=document.getElementById('fEstado').value;
+  const gest=document.getElementById('fGestion').value;
+  return RAW.filter(l=>{
+    if(desde&&l.f<desde)return false;
+    if(hasta&&l.f>hasta)return false;
+    if(vend&&l.v!==vend)return false;
+    if(camp&&l.c!==camp)return false;
+    if(est&&l.e!==est)return false;
+    if(gest==='sg'&&!l.sg)return false;
+    if(gest==='cg'&&l.sg)return false;
+    if(gest==='ct'&&l.ct!=='Contesta')return false;
+    if(gest==='nc'&&l.ct!=='No contesta')return false;
+    if(gest==='fe'&&l.ct!=='Fono erroneo')return false;
+    return true;
   });
-  
-  html += '</tbody></table>';
-  if (leads.length > 25) html += '<p style="text-align:center;color:#64748b;margin-top:12px">Mostrando 25 de ' + leads.length + '</p>';
-  
-  document.getElementById('tableContainer').innerHTML = html;
 }
 
-function badgeContacto(c) {
-  if (c === 'Contesta') return 'contesta';
-  if (c === 'No contesta') return 'no-contesta';
-  return 'sin-gestionar';
-}
-function textoContacto(c) {
-  if (c === 'Contesta') return '✅ Contesta';
-  if (c === 'No contesta') return '📵 No contesta';
-  return '⚠️ Sin gestionar';
-}
-function badgeEstado(e) {
-  if (e === 'Agendado') return 'agendado';
-  if (e === 'No interesado') return 'no-interesado';
-  if (e === 'Otros ( dejar obs)') return 'otros';
-  if (e === 'Cierre de negocio') return 'cierre';
-  if (e === 'Desiste') return 'desiste';
-  return 'pendiente';
-}
-function textoEstado(e) {
-  if (e === 'Agendado') return '🟢 Agendado';
-  if (e === 'No interesado') return '🔴 No interesado';
-  if (e === 'Otros ( dejar obs)') return '🟡 Otros';
-  if (e === 'Cierre de negocio') return '🏆 Cierre';
-  if (e === 'Desiste') return '❌ Desiste';
-  return '⏳ Pendiente';
+function sinGMetrics(arr){
+  const sg=arr.filter(l=>l.sg);
+  const hs=sg.map(l=>l.hs).filter(v=>v!==null);
+  const ds=sg.map(l=>l.ds).filter(v=>v!==null);
+  return{
+    count:sg.length,
+    avgH:avg(hs),
+    avgD:avg(ds),
+    maxH:hs.length?Math.max(...hs):null,
+    maxD:ds.length?Math.max(...ds):null,
+    items:sg
+  };
 }
 
-function actualizarGraficos(leads) {
-  // Destruir anteriores
-  Object.values(charts).forEach(c => c.destroy());
-  
-  const vends = [...new Set(leads.map(l => l.vendedor))];
-  
-  // Chart 1: Barras por vendedor
-  const dataVend = vends.map(v => {
-    const lv = leads.filter(l => l.vendedor === v);
-    return {
-      v: v.split(' ')[0],
-      contactados: lv.filter(l => l.contactado === 'Contesta').length,
-      sinGestionar: lv.filter(l => !l.contactado || l.contactado === 'Sin gestionar').length,
-      cierres: lv.filter(l => l.estado === 'Cierre de negocio').length
-    };
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
+
+function render(){
+  const data=getFiltered();
+  const n=data.length;
+  const nuevos=data.filter(l=>l.t==='N');
+  const usados=data.filter(l=>l.t==='U');
+  const ctados=data.filter(l=>hasCt(l));
+  const agend=data.filter(l=>isAg(l));
+  const sinG=sinGMetrics(data);
+  const sinGNuevos=sinGMetrics(nuevos);
+  const sinGUsados=sinGMetrics(usados);
+  const crit8=data.filter(l=>l.sg&&l.r==='8+ días');
+  // worst case item
+  const worstItem=sinG.items.length?sinG.items.reduce((a,b)=>(b.hs||0)>(a.hs||0)?b:a,sinG.items[0]):null;
+
+  document.getElementById('headerTotal').textContent=`${n} leads`;
+  document.getElementById('footerN').textContent=n;
+
+  // HERO
+  document.getElementById('heroHoras').innerHTML=fmt(sinG.avgH,0)+'<span class="unit">h</span>';
+  document.getElementById('heroDias').textContent=sinG.avgD!==null?`${fmt(sinG.avgD,1)} días en promedio desde asignación`:'—';
+  document.getElementById('heroMax').innerHTML=fmt(sinG.maxH,0)+'<span class="unit">h</span>';
+  document.getElementById('heroMaxInfo').textContent=sinG.maxH!==null?`${fmt(sinG.maxD,0)} días · ${worstItem?worstItem.v:'—'}`:'—';
+  document.getElementById('heroNSH').innerHTML=fmt(sinGNuevos.avgH,0)+'<span class="unit">h</span>';
+  document.getElementById('heroNSD').textContent=`${sinGNuevos.avgD!==null?fmt(sinGNuevos.avgD,1)+' días prom. · ':''}${sinGNuevos.count} leads sin gestión`;
+  document.getElementById('heroUSH').innerHTML=fmt(sinGUsados.avgH,0)+'<span class="unit">h</span>';
+  document.getElementById('heroUSD').textContent=`${sinGUsados.avgD!==null?fmt(sinGUsados.avgD,1)+' días prom. · ':''}${sinGUsados.count} leads sin gestión`;
+
+  // KPIs
+  document.getElementById('kpiTotal').textContent=n;
+  document.getElementById('kpiTipoSplit').textContent=`${nuevos.length} nuevos · ${usados.length} usados`;
+  document.getElementById('kpiSinG').textContent=sinG.count;
+  document.getElementById('kpiSinGPct').textContent=pct(sinG.count,n)+' del total';
+  document.getElementById('pbarSinG').style.width=pct(sinG.count,n);
+  document.getElementById('kpiCont').textContent=pct(ctados.length,n);
+  document.getElementById('kpiContN').textContent=`${ctados.length} con registro en Contactado`;
+  document.getElementById('pbarCont').style.width=pct(ctados.length,n);
+  document.getElementById('kpiAg').textContent=pct(agend.length,n);
+  document.getElementById('kpiAgN').textContent=`${agend.length} leads agendados`;
+  document.getElementById('pbarAg').style.width=pct(agend.length,n);
+  document.getElementById('kpiCrit').textContent=crit8.length;
+  document.getElementById('kpiCritInfo').textContent=pct(crit8.length,n)+' · llevan 8+ días sin acción';
+  document.getElementById('pbarCrit').style.width=pct(crit8.length,n);
+
+  // SS BLOCK
+  document.getElementById('ssNum').textContent=sinG.count;
+  document.getElementById('ssNuevos').textContent=sinGNuevos.count;
+  document.getElementById('ssUsados').textContent=sinGUsados.count;
+  document.getElementById('ssPct').textContent=pct(sinG.count,n);
+  document.getElementById('ssHoras').textContent=fmt(sinG.avgH,0)+'h';
+  document.getElementById('ssMaxHoras').textContent=fmt(sinG.maxH,0)+'h';
+
+  // ANTIGÜEDAD BARS (solo sin gestión)
+  const rangos=[
+    {r:'0-1 días',  color:'#10b981', label:'0–1 día'},
+    {r:'2-3 días',  color:'#f59e0b', label:'2–3 días'},
+    {r:'4-7 días',  color:'#f97316', label:'4–7 días'},
+    {r:'8+ días',   color:'#ef4444', label:'8+ días ⚠'},
+  ];
+  const rCounts=rangos.map(({r})=>({...{},count:data.filter(l=>l.sg&&l.r===r).length}));
+  const maxR=Math.max(...rCounts.map(x=>x.count),1);
+  document.getElementById('badgeAntigCrit').textContent=`${crit8.length} críticos`;
+  // avg horas by rango
+  const avgHByR=rangos.map(({r})=>{
+    const arr=data.filter(l=>l.sg&&l.r===r).map(l=>l.hs).filter(v=>v!==null);
+    return avg(arr);
   });
-  
-  charts.vendedores = new Chart(document.getElementById('chartVendedores'), {
-    type: 'bar',
-    data: {
-      labels: dataVend.map(d => d.v),
-      datasets: [
-        { label: 'Contactados', data: dataVend.map(d => d.contactados), backgroundColor: '#22c55e' },
-        { label: 'Sin Gestionar', data: dataVend.map(d => d.sinGestionar), backgroundColor: '#ef4444' },
-        { label: 'Cierres', data: dataVend.map(d => d.cierres), backgroundColor: '#ca8a04' }
+
+  document.getElementById('antigWrap').innerHTML=rangos.map(({r,color,label},i)=>`
+    <div class="antig-row">
+      <div class="antig-label" style="color:${color}">${label}</div>
+      <div class="antig-bar-bg">
+        <div class="antig-bar" style="width:${rCounts[i].count/maxR*100}%;background:${color}22;border-left:3px solid ${color}">
+          <span class="bc" style="color:${color}">${rCounts[i].count}</span>
+          <span class="bs">${avgHByR[i]!==null?'prom. '+fmt(avgHByR[i],0)+'h':''}</span>
+        </div>
+      </div>
+      <div class="antig-pct">${pct(rCounts[i].count,sinG.count)}</div>
+    </div>
+  `).join('');
+
+  // CHART ESTADOS
+  const eMap={};
+  data.forEach(l=>{
+    let e=l.e||'(Sin estado)';
+    if(e.toLowerCase().includes('agendado'))e='Agendado';
+    else if(e.toLowerCase().includes('no interesado'))e='No interesado';
+    else if(e.toLowerCase().includes('desiste'))e='Desiste';
+    else if(e.toLowerCase().includes('otros'))e='Otros';
+    eMap[e]=(eMap[e]||0)+1;
+  });
+  const eL=Object.keys(eMap).sort((a,b)=>eMap[b]-eMap[a]);
+  const eColors=eL.map(k=>{
+    if(k==='Agendado')return CC.gr;
+    if(k==='No interesado')return CC.rd;
+    if(k==='Desiste')return CC.am;
+    if(k==='(Sin estado)')return'rgba(255,255,255,0.15)';
+    return CC.bl;
+  });
+  destroyChart('estados');
+  charts['estados']=new Chart(document.getElementById('chartEstados'),{
+    type:'doughnut',
+    data:{labels:eL,datasets:[{data:eL.map(k=>eMap[k]),backgroundColor:eColors,borderWidth:1,borderColor:'rgba(0,0,0,0.3)',hoverOffset:4}]},
+    options:{cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{boxWidth:10,padding:8,font:{size:11},color:'#8896b0'}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed} (${(ctx.parsed/n*100).toFixed(1)}%)`}}}}
+  });
+
+  // TIPO METRICS
+  const tm=(arr,sgm)=>{
+    const tot=arr.length;
+    const c=arr.filter(l=>hasCt(l)).length;
+    const a=arr.filter(l=>isAg(l)).length;
+    return{tot,cont:pct(c,tot),ag:pct(a,tot),sg:sgm.count,hs:fmt(sgm.avgH,0),ds:fmt(sgm.avgD,1),maxH:fmt(sgm.maxH,0)};
+  };
+  const mn=tm(nuevos,sinGNuevos);
+  const mu=tm(usados,sinGUsados);
+  document.getElementById('tnTot').textContent=mn.tot;
+  document.getElementById('tnCont').textContent=mn.cont;
+  document.getElementById('tnAg').textContent=mn.ag;
+  document.getElementById('tnSG').textContent=mn.sg;
+  document.getElementById('tnHS').textContent=mn.hs+'h';
+  document.getElementById('tnDS').textContent=mn.ds+' días';
+  document.getElementById('tnMax').textContent=mn.maxH+'h';
+  document.getElementById('tuTot').textContent=mu.tot;
+  document.getElementById('tuCont').textContent=mu.cont;
+  document.getElementById('tuAg').textContent=mu.ag;
+  document.getElementById('tuSG').textContent=mu.sg;
+  document.getElementById('tuHS').textContent=mu.hs+'h';
+  document.getElementById('tuDS').textContent=mu.ds+' días';
+  document.getElementById('tuMax').textContent=mu.maxH+'h';
+
+  // TABLE VENDEDOR
+  const vMap={};
+  data.forEach(l=>{
+    if(!vMap[l.v])vMap[l.v]={tot:0,n:0,u:0,ct:0,ag:0,sg:[],maxH:0};
+    const vm=vMap[l.v];
+    vm.tot++;
+    if(l.t==='N')vm.n++;else vm.u++;
+    if(hasCt(l))vm.ct++;
+    if(isAg(l))vm.ag++;
+    if(l.sg){
+      vm.sg.push(l.hs||0);
+      if((l.hs||0)>vm.maxH)vm.maxH=l.hs||0;
+    }
+  });
+  const vRows=Object.entries(vMap).sort((a,b)=>b[1].tot-a[1].tot);
+  const globalMaxH=Math.max(...vRows.map(([,v])=>v.maxH),1);
+  document.getElementById('tbodyVend').innerHTML=vRows.map(([vn,vm])=>{
+    const avgHSG=avg(vm.sg);
+    const avgDSG=avgHSG!==null?avgHSG/24:null;
+    const sgPct=vm.sg.length/vm.tot;
+    const isCrit=vm.maxH>168; // >7 días
+    return`<tr${isCrit?' class="highlight-red"':''}>
+      <td class="tnm">${vn}</td>
+      <td class="tdn right">${vm.tot}</td>
+      <td class="tdn right b">${vm.n}</td>
+      <td class="tdn right a">${vm.u}</td>
+      <td><span class="pill ${vm.ct/vm.tot>0.7?'pg':vm.ct/vm.tot>0.4?'pa':'pr'}">${pct(vm.ct,vm.tot)}</span></td>
+      <td><span class="pill ${vm.ag>0?'pg':'pb'}">${pct(vm.ag,vm.tot)}</span></td>
+      <td class="tdn right ${sgPct>0.2?'r':''}"><strong>${vm.sg.length}</strong></td>
+      <td class="tdn right r" title="Horas promedio desde asignación sin acción comercial">${avgHSG!==null?fmt(avgHSG,0)+'h':'—'}</td>
+      <td class="tdn right r" title="El lead más antiguo sin gestión de este vendedor">${vm.maxH>0?fmt(vm.maxH,0)+'h':'—'}</td>
+      <td class="tdn right">${avgDSG!==null?fmt(avgDSG,1)+' d':'—'}</td>
+    </tr>`;
+  }).join('');
+
+  // TABLE CAMPAÑA
+  const cMap={};
+  data.forEach(l=>{
+    if(!cMap[l.c])cMap[l.c]={tot:0,ct:0,ag:0,sg:[]};
+    const cm=cMap[l.c];
+    cm.tot++;
+    if(hasCt(l))cm.ct++;
+    if(isAg(l))cm.ag++;
+    if(l.sg)cm.sg.push(l.hs||0);
+  });
+  const cRows=Object.entries(cMap).sort((a,b)=>b[1].tot-a[1].tot).slice(0,14);
+  document.getElementById('tbodyCamp').innerHTML=cRows.map(([cn,cm])=>{
+    const avgH=avg(cm.sg);
+    return`<tr>
+      <td class="tnm">${cn}</td>
+      <td class="tdn right">${cm.tot}</td>
+      <td><span class="pill ${cm.ct/cm.tot>0.7?'pg':cm.ct/cm.tot>0.4?'pa':'pr'}">${pct(cm.ct,cm.tot)}</span></td>
+      <td><span class="pill ${cm.ag>0?'pg':'pb'}">${pct(cm.ag,cm.tot)}</span></td>
+      <td class="tdn right ${cm.sg.length>5?'r':''}">${cm.sg.length}</td>
+      <td class="tdn right r">${avgH!==null?fmt(avgH,0)+'h':'—'}</td>
+      <td class="tdn right">${avgH!==null?fmt(avgH/24,1)+' d':'—'}</td>
+    </tr>`;
+  }).join('');
+
+  // CHART CAMPAÑA
+  const top10=cRows.slice(0,10);
+  destroyChart('camp');
+  charts['camp']=new Chart(document.getElementById('chartCamp'),{
+    type:'bar',
+    data:{labels:top10.map(([c])=>c.length>18?c.slice(0,18)+'…':c),datasets:[{data:top10.map(([,cm])=>cm.tot),backgroundColor:top10.map((_,i)=>CA[i%CA.length]+'bb'),borderRadius:6,borderWidth:0}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8896b0',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10}}}}}
+  });
+
+  // CHART VENDEDOR (stacked nuevos + usados, con sin gestión overlay)
+  const vnames=vRows.map(([v])=>v);
+  destroyChart('vend');
+  charts['vend']=new Chart(document.getElementById('chartVend'),{
+    type:'bar',
+    data:{
+      labels:vnames,
+      datasets:[
+        {label:'Nuevos',data:vnames.map(v=>vMap[v].n),backgroundColor:CC.bl+'99',borderRadius:3,borderWidth:0},
+        {label:'Usados',data:vnames.map(v=>vMap[v].u),backgroundColor:CC.am+'99',borderRadius:3,borderWidth:0},
+        {label:'Sin gestión',data:vnames.map(v=>vMap[v].sg.length),backgroundColor:CC.rd+'cc',borderRadius:3,borderWidth:0}
       ]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#94a3b8' } } },
-      scales: {
-        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' } },
-        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' } }
-      }
-    }
-  });
-  
-  // Chart 2: Pie estados
-  const estados = {};
-  leads.forEach(l => { const e = l.estado || 'Sin estado'; estados[e] = (estados[e] || 0) + 1; });
-  const colores = { 'Agendado': '#22c55e', 'No interesado': '#ef4444', 'Otros ( dejar obs)': '#ca8a04', 'Cierre de negocio': '#a16207', 'Desiste': '#991b1b', 'Sin estado': '#6b7280' };
-  
-  charts.estados = new Chart(document.getElementById('chartEstados'), {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(estados),
-      datasets: [{ data: Object.values(estados), backgroundColor: Object.keys(estados).map(e => colores[e] || '#6b7280') }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 11 } } } }
-    }
-  });
-  
-  // Chart 3: Efectividad
-  const dataEfect = vends.map(v => {
-    const lv = leads.filter(l => l.vendedor === v);
-    const ok = lv.filter(l => l.estado === 'Cierre de negocio' || l.estado === 'Agendado').length;
-    return { v: v.split(' ')[0], ef: lv.length ? Math.round((ok / lv.length) * 100) : 0 };
-  }).sort((a, b) => b.ef - a.ef);
-  
-  charts.efectividad = new Chart(document.getElementById('chartEfectividad'), {
-    type: 'bar',
-    data: {
-      labels: dataEfect.map(d => d.v),
-      datasets: [{ label: 'Efectividad %', data: dataEfect.map(d => d.ef), backgroundColor: '#06b6d4', borderRadius: 6 }]
-    },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { max: 100, ticks: { color: '#94a3b8', callback: v => v + '%' }, grid: { color: 'rgba(148,163,184,0.1)' } },
-        y: { ticks: { color: '#94a3b8' }, grid: { display: false } }
-      }
-    }
+    options:{plugins:{legend:{display:true,labels:{boxWidth:10,padding:8,color:'#8896b0',font:{size:11}}}},scales:{x:{grid:{display:false},ticks:{color:'#8896b0',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8896b0',font:{size:10}}}}}
   });
 }
+
+function populateFilters(){
+  const vs=[...new Set(RAW.map(l=>l.v))].sort();
+  const cs=[...new Set(RAW.map(l=>l.c))].sort();
+  const es=[...new Set(RAW.map(l=>l.e).filter(Boolean))].sort();
+  const fV=document.getElementById('fVendedor');
+  vs.forEach(v=>fV.add(new Option(v,v)));
+  const fC=document.getElementById('fCampana');
+  cs.forEach(c=>fC.add(new Option(c,c)));
+  const fE=document.getElementById('fEstado');
+  es.forEach(e=>fE.add(new Option(e,e)));
+}
+
+function resetFilters(){
+  document.getElementById('fDesde').value='2026-02-01';
+  document.getElementById('fHasta').value='2026-03-16';
+  document.getElementById('fVendedor').value='';
+  document.getElementById('fCampana').value='';
+  document.getElementById('fEstado').value='';
+  document.getElementById('fGestion').value='';
+  render();
+}
+
+populateFilters();
+render();
+document.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',render));
 </script>
 </body>
 </html>
